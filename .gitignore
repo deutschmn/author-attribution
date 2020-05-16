@@ -1,2 +1,7 @@
 *.idea
 __pycache__/
+
+pkl_cache/
+
+# For now don't commit plots
+plots/
