@@ -1,54 +1,55 @@
-import numpy as np
-import matplotlib
+import os
 import sqlite3
+import sqlalchemy
 import pandas
+import numpy as np
 
-DBASE = 'dataset/corpus.sqlite3'
+DBASE = 'dataset/corpus_working_copy.sqlite3'
+PKL_CACHE_FOLDER = "pkl_cache"
 
 
-def top_negative_articles():
-    sql = '''
-        SELECT Posts.ID_Article, 
-        SUM(case when Posts.PositiveVotes =1 then 1 else 0 END) AS PositiveVotesCount, 
-        SUM(case when Posts.NegativeVotes =1 then 1 else 0 END) AS NegativeVotesCount,
-        Articles.Path,
-        Articles.Title
-        FROM Posts 
-        LEFT JOIN Articles ON Posts.ID_Article = Articles.ID_Article
-        GROUP BY Posts.ID_Article
-        ORDER BY NegativeVotesCount DESC
-    '''
+def get_pandas_from_table(table_name):
+    con = sqlalchemy.create_engine("sqlite:///" + DBASE).connect()
+    pandas_frame = pandas.read_sql_table(table_name, con)
+    con.close()
+    return pandas_frame
+
+
+def get_table_names():
     con = sqlite3.connect(DBASE)
     curs = con.cursor()
-    r = curs.execute(sql)
-    a = np.array(curs.fetchall())
-    print("The 10 most disliked articles:")
-    csv = pandas.DataFrame(a[:10]).to_csv(header=["ID", "PositiveVotes", "NegativeVotes", "Path", "Title"])
-    print(csv)
+    curs.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;")
+    tables = curs.fetchall()
+    tables = [r[0] for r in tables]
+    con.close()
+    return tables
 
 
-def top_positive_articles():
-    sql = '''
-        SELECT Posts.ID_Article, 
-        SUM(case when Posts.PositiveVotes =1 then 1 else 0 END) AS PositiveVotesCount, 
-        SUM(case when Posts.NegativeVotes =1 then 1 else 0 END) AS NegativeVotesCount,
-        Articles.Path,
-        Articles.Title
-        FROM Posts 
-        LEFT JOIN Articles ON Posts.ID_Article = Articles.ID_Article
-        GROUP BY Posts.ID_Article
-        ORDER BY PositiveVotesCount DESC
-    '''
-    con = sqlite3.connect(DBASE)
-    curs = con.cursor()
-    r = curs.execute(sql)
-    a = np.array(curs.fetchall())
-    print("The 10 most liked articles:")
-    csv = pandas.DataFrame(a[:10]).to_csv(header=["ID", "PositiveVotes", "NegativeVotes", "Path", "Title"])
-    print(csv)
+def convert_date(dstring):
+    return pandas.datetime.strptime(dstring, '%Y-%m-%d %H:%M:%S.%f')
 
 
-def explore_categories():
+def query_to_data_frame(sql: str, pkl_cache_fname: str = None):
+    def load_data():
+        con = sqlite3.connect(DBASE)
+        curs = con.cursor()
+        curs.execute(sql)
+        frame = pandas.DataFrame(curs.fetchall())
+        frame.to_pickle(PKL_CACHE_FOLDER + "/" + pkl_cache_fname)
+        return frame
+
+    if pkl_cache_fname is not None:
+        try:
+            if not os.path.exists(PKL_CACHE_FOLDER):
+                os.makedirs(PKL_CACHE_FOLDER)
+            return pandas.read_pickle(PKL_CACHE_FOLDER + "/" + pkl_cache_fname)
+        except (FileNotFoundError, IOError):
+            return load_data()
+    else:
+        return load_data()
+
+
+def create_category_table():
     sql = '''
        SELECT ID_Article, Title, Path
        FROM Articles;
@@ -97,17 +98,7 @@ def explore_categories():
         remaining_path = category_array[i][3]
         r = curs.execute('INSERT INTO Article_Categories(ID_Article, MainCategory, SubCategory, RemainingPath) '
                          'VALUES(?, ?, ?, ?)', (article_id, main_category, sub_category, remaining_path))
+        print(curs.lastrowid)
 
+    con.commit()
     con.close()
-    print("done")
-
-
-def main():
-    top_negative_articles()
-    top_positive_articles()
-
-    print("done")
-
-
-if __name__ == '__main__':
-    main()
