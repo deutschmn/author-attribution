@@ -8,7 +8,7 @@ import numpy as np
 import datetime
 
 
-def category_analysis():
+def generate_joined_category_articles_frame():
     frame = dbase_helper.get_pandas_from_table("Article_Categories")
     main_categories = np.array(frame.MainCategory)
     plt_helper.plot_histogram_distinct("Main Category Distribution", main_categories)
@@ -30,6 +30,11 @@ def category_analysis():
     article_frame.columns = ['Article_ID', 'Title', 'PublishingDate', 'MainCategory', 'SubCategory', 'RemainingPath',
                              'Body']
     article_frame['PublishingDate'] = pandas.to_datetime(article_frame['PublishingDate'])
+    return article_frame
+
+
+def category_analysis():
+    article_frame = generate_joined_category_articles_frame()
 
     # Do stuff with articles by year
     years = np.array(article_frame.sort_values(by='PublishingDate')['PublishingDate'].dt.year)
@@ -67,33 +72,39 @@ def category_analysis():
     print("done")
 
 
-def rating_analysis():
+def generate_joined_rating_articles_frame():
     sql = '''
-        SELECT Posts.ID_Article, 
-        Articles.Title,
-        SUM(case when Posts.PositiveVotes =1 then 1 else 0 END) AS PositiveVotesCount, 
-        SUM(case when Posts.NegativeVotes =1 then 1 else 0 END) AS NegativeVotesCount,
-        Article_Categories.MainCategory,
-        Article_Categories.SubCategory,
-        Article_Categories.RemainingPath,
-        Articles.Body
-        FROM Posts 
-        LEFT JOIN Articles ON Posts.ID_Article = Articles.ID_Article
-        LEFT JOIN Article_Categories ON Posts.ID_Article = Article_Categories.ID_Article
-        GROUP BY Posts.ID_Article;
-    '''
+            SELECT Posts.ID_Article, 
+            Articles.Title,
+            SUM(case when Posts.PositiveVotes =1 then 1 else 0 END) AS PositiveVotesCount, 
+            SUM(case when Posts.NegativeVotes =1 then 1 else 0 END) AS NegativeVotesCount,
+            Article_Categories.MainCategory,
+            Article_Categories.SubCategory,
+            Article_Categories.RemainingPath,
+            Articles.Body
+            FROM Posts 
+            LEFT JOIN Articles ON Posts.ID_Article = Articles.ID_Article
+            LEFT JOIN Article_Categories ON Posts.ID_Article = Article_Categories.ID_Article
+            GROUP BY Posts.ID_Article;
+        '''
     frame = dbase_helper.query_to_data_frame(sql, "joined_rating_articles.pkl")
     frame.columns = ["ID_Article", "Title", "PositiveVotesCount", "NegativeVotesCount", "MainCategory", "SubCategory",
                      "RemainingPath", "Body"]
-    main_category_votes = frame[["PositiveVotesCount", "NegativeVotesCount", "MainCategory"]].groupby(by="MainCategory").sum()
+    return frame
+
+
+def rating_analysis():
+    frame = generate_joined_rating_articles_frame()
+    main_category_votes = frame[["PositiveVotesCount", "NegativeVotesCount", "MainCategory"]].groupby(
+        by="MainCategory").sum()
     main_category_votes.plot(kind='bar')
     plt_helper.save_and_show_plot("Votes for Posts per Main Category")
 
     newsroom_data = frame[frame.MainCategory == "Newsroom"]
-    newsroom_votes = newsroom_data[["PositiveVotesCount", "NegativeVotesCount", "SubCategory"]].groupby(by="SubCategory").sum()
+    newsroom_votes = newsroom_data[["PositiveVotesCount", "NegativeVotesCount", "SubCategory"]].groupby(
+        by="SubCategory").sum()
     newsroom_votes.plot(kind='bar')
     plt_helper.save_and_show_plot("Votes for Posts per Newsroom Category")
-
     print("done")
 
 

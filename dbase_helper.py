@@ -51,9 +51,7 @@ def query_to_data_frame(sql: str, pkl_cache_fname):
         curs.execute(sql)
         frame = pandas.DataFrame(curs.fetchall())
         return frame
-    generate_pkl(pkl_cache_fname, load_data)
-
-
+    return generate_pkl(pkl_cache_fname, load_data)
 
 
 def create_category_table():
