@@ -3,6 +3,7 @@ import sqlite3
 import sqlalchemy
 import pandas
 import numpy as np
+from typing import Callable
 
 DBASE = 'dataset/corpus_working_copy.sqlite3'
 PKL_CACHE_FOLDER = "pkl_cache"
@@ -29,24 +30,30 @@ def convert_date(dstring):
     return pandas.datetime.strptime(dstring, '%Y-%m-%d %H:%M:%S.%f')
 
 
-def query_to_data_frame(sql: str, pkl_cache_fname: str = None):
-    def load_data():
-        con = sqlite3.connect(DBASE)
-        curs = con.cursor()
-        curs.execute(sql)
-        frame = pandas.DataFrame(curs.fetchall())
-        frame.to_pickle(PKL_CACHE_FOLDER + "/" + pkl_cache_fname)
-        return frame
-
+def generate_pkl(pkl_cache_fname: str, function: Callable[[any], pandas.DataFrame], *args, **kwargs):
     if pkl_cache_fname is not None:
         try:
             if not os.path.exists(PKL_CACHE_FOLDER):
                 os.makedirs(PKL_CACHE_FOLDER)
             return pandas.read_pickle(PKL_CACHE_FOLDER + "/" + pkl_cache_fname)
         except (FileNotFoundError, IOError):
-            return load_data()
+            frame = function(*args, *kwargs)
+            frame.to_pickle(PKL_CACHE_FOLDER + "/" + pkl_cache_fname)
+            return frame
     else:
-        return load_data()
+        return function(*args, *kwargs)
+
+
+def query_to_data_frame(sql: str, pkl_cache_fname):
+    def load_data():
+        con = sqlite3.connect(DBASE)
+        curs = con.cursor()
+        curs.execute(sql)
+        frame = pandas.DataFrame(curs.fetchall())
+        return frame
+    generate_pkl(pkl_cache_fname, load_data)
+
+
 
 
 def create_category_table():
