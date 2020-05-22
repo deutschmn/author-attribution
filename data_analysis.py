@@ -9,16 +9,6 @@ import datetime
 
 
 def generate_joined_category_articles_frame():
-    frame = dbase_helper.get_pandas_from_table("Article_Categories")
-    main_categories = np.array(frame.MainCategory)
-    plt_helper.plot_histogram_distinct("Main Category Distribution", main_categories)
-
-    for current_main_category in np.unique(main_categories):
-        main_category_data = frame[frame['MainCategory'] == current_main_category]
-        main_category_sub_categories = main_category_data["SubCategory"]
-        plt_helper.plot_histogram_distinct("Category Distribution " + current_main_category,
-                                           main_category_sub_categories)
-
     article_frame = dbase_helper.query_to_data_frame(
         '''
         SELECT Articles.ID_Article, Articles.Title, Articles.publishingDate, Article_Categories.MainCategory, 
@@ -34,6 +24,16 @@ def generate_joined_category_articles_frame():
 
 
 def category_analysis():
+    frame = dbase_helper.get_pandas_from_table("Article_Categories")
+    main_categories = np.array(frame.MainCategory)
+    plt_helper.plot_histogram_distinct("Main Category Distribution", main_categories)
+
+    for current_main_category in np.unique(main_categories):
+        main_category_data = frame[frame['MainCategory'] == current_main_category]
+        main_category_sub_categories = main_category_data["SubCategory"]
+        plt_helper.plot_histogram_distinct("Category Distribution " + current_main_category,
+                                           main_category_sub_categories)
+
     article_frame = generate_joined_category_articles_frame()
 
     # Do stuff with articles by year

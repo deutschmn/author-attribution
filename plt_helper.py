@@ -25,8 +25,9 @@ def plot_day_histogram(title: str, data):
     save_and_show_plot(title)
 
 
-def save_and_show_plot(title: str):
-    plt.title(title)
+def save_and_show_plot(title: str, print_title=True):
+    if print_title:
+        plt.title(title)
     plt.tight_layout()
     plt.savefig("plots/" + title_to_filename(title))
     plt.show()
