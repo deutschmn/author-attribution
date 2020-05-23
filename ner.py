@@ -22,7 +22,7 @@ def ner_article_plots():
     plt_helper.save_and_show_plot("Entity Label Distribution")
 
     joined_article_categories = data_analysis.generate_joined_category_articles_frame()
-    articles_time = joined_article_categories[['Article_ID', 'PublishingDate']]
+    articles_time = joined_article_categories[['ID_Article', 'PublishingDate']]
 
     for label in set(entities["Label"]):
         print("Doing plots for: " + label)
@@ -105,18 +105,18 @@ def generate_article_ner_frame():
     entities = pandas.concat(
         [pandas.Series(article_ids), pandas.Series(labels), pandas.Series(texts), pandas.Series(stemmed_texts)],
         axis=1,
-        keys=['Article_ID', 'Label', 'Text', 'StemmedText']
+        keys=['ID_Article', 'Label', 'Text', 'StemmedText']
     )
 
     num_unified_entities = 2000
     print("Unifying top " + str(num_unified_entities) + " entity-texts based on stemmed text")
     renamed_entities = entities.StemmedText.value_counts().head(num_unified_entities)
     num_entities = len(renamed_entities)
-    current_entity = 1
+    current_entity_idx = 1
     for entity in renamed_entities.index.values:
-        if current_entity % 100 == 0:
-            print("Entity " + str(current_entity) + "/" + str(num_entities))
-        current_entity += 1
+        if current_entity_idx % 100 == 0:
+            print("Entity " + str(current_entity_idx) + "/" + str(num_entities))
+        current_entity_idx += 1
         unified_text = entities[entities.StemmedText == entity].Text.values[0]
         entities.Text[entities.StemmedText == entity] = unified_text
     return entities
@@ -127,7 +127,7 @@ def create_co_occurrence_all():
     num_top_entities = 50
     pandas.DataFrame(entities['Text'].value_counts().head(num_top_entities)).plot.bar()
     plt.title("Distribution of top " + str(num_top_entities) + " named entities over all "
-              + str(entities['Article_ID'].size) + " Articles")
+              + str(entities['ID_Article'].size) + " Articles")
     plt.show()
 
     word_occurrences = pandas.DataFrame(entities['Text'].value_counts())
@@ -148,22 +148,25 @@ def create_co_occurrence_all():
 
 def create_co_occurrence_matrix(interesting_words: [str], filename: str = None):
     entities = dbase_helper.generate_pkl("prepared_ner_articles.pkl", generate_article_ner_frame)
-    some = entities[entities['Text'].isin(interesting_words)].groupby(by='Article_ID', as_index=False).agg(
-        lambda x: ' '.join(list(x)))[['Article_ID', 'Text']]
-    interesting_articles = np.array(some['Article_ID'])
+    data = entities[entities['Text'].isin(interesting_words)].groupby(by='ID_Article', as_index=False).agg(
+        lambda x: ' '.join(list(x)))[['ID_Article', 'Text']]
+    interesting_articles = np.array(data['ID_Article'])
 
-    percent_interesting_articles = (interesting_articles.size / np.unique(entities['Article_ID']).size) * 100
+    percent_interesting_articles = (interesting_articles.size / np.unique(entities['ID_Article']).size) * 100
     print("We look at " + str(len(interesting_words)) + " entities and therefore at "
           + str(round(percent_interesting_articles, 2)) + "% of all articles for co-occurrence")
 
     count_model = CountVectorizer(ngram_range=(1, 1))  # default unigram model
-    X = count_model.fit_transform(np.array(some['Text']))
+    X = count_model.fit_transform(np.array(data['Text']))
     names = count_model.get_feature_names()
     # X[X > 0] = 1 # run this line if you don't want extra within-text cooccurence (see below)
     Xc = (X.T * X)  # this is co-occurrence matrix in sparse csr format
     Xc.setdiag(0)  # fill same word cooccurence to 0
     co_occurrences = pandas.DataFrame(data=Xc.toarray(), columns=names, index=names)
-    co_occurrences.to_csv(dbase_helper.PKL_CACHE_FOLDER + '/' + filename, sep=',')
+    if filename:
+        co_occurrences.to_csv(dbase_helper.PKL_CACHE_FOLDER + '/' + filename, sep=',')
+
+    return pandas.DataFrame(data=X.toarray(), columns=names, index=data.ID_Article.values), co_occurrences
 
 
 if __name__ == '__main__':

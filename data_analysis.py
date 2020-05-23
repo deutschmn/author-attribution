@@ -17,7 +17,7 @@ def generate_joined_category_articles_frame():
         ''',
         "joined_category_articles.pkl"
     )
-    article_frame.columns = ['Article_ID', 'Title', 'PublishingDate', 'MainCategory', 'SubCategory', 'RemainingPath',
+    article_frame.columns = ['ID_Article', 'Title', 'PublishingDate', 'MainCategory', 'SubCategory', 'RemainingPath',
                              'Body']
     article_frame['PublishingDate'] = pandas.to_datetime(article_frame['PublishingDate'])
     return article_frame
