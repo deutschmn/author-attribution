@@ -15,7 +15,7 @@ import data_analysis
 
 def ner_article_plots():
     entities = dbase_helper.generate_pkl("prepared_ner_articles.pkl", generate_article_ner_frame)
-    pandas.DataFrame(entities['StemmedText'].value_counts().head(30)).plot.bar()
+    pandas.DataFrame(entities['Text'].value_counts().head(30)).plot.bar()
     plt_helper.save_and_show_plot("Entity Distribution")
 
     entities["Label"].value_counts().plot.bar()
@@ -27,11 +27,10 @@ def ner_article_plots():
     for label in set(entities["Label"]):
         print("Doing plots for: " + label)
         label_entities = entities[entities['Label'] == label]
-        label_series = label_entities["StemmedText"].value_counts().head(30)
+        label_series = label_entities["Text"].value_counts().head(30)
 
-        # For persons we check if name is subname and combine values (problematic with other lables e.g. österreich -
-        # oberösterreich)
         if label == "PER":
+            print("For top person entries try to unify first+last name and first-name/last-name only entries")
             persons = label_series.index.values
             for person in persons:
                 for compare_person in persons:
@@ -49,19 +48,19 @@ def ner_article_plots():
         top_entity_entries = []
         for entity in top_entities:
             if label == "PER":
-                entity_entries = label_entities[label_entities.StemmedText.str.contains(entity)]
-                entity_entries = entity_entries.assign(StemmedText=entity)
+                entity_entries = label_entities[label_entities.Text.str.contains(entity)]
+                entity_entries = entity_entries.assign(Text=entity)
             else:
-                entity_entries = label_entities[label_entities.StemmedText == entity]
+                entity_entries = label_entities[label_entities.Text == entity]
             top_entity_entries.append(entity_entries)
         top_entity_entries = pandas.concat(top_entity_entries)
         top_entity_entries = pandas.merge(top_entity_entries, articles_time)
 
         plt.style.use('seaborn-deep')
         year_entity_entries = top_entity_entries[top_entity_entries.PublishingDate.dt.year > 2014][
-            ['PublishingDate', 'StemmedText']]
+            ['PublishingDate', 'Text']]
         year_entity_entries.PublishingDate = year_entity_entries.PublishingDate.dt.date
-        plots = year_entity_entries['PublishingDate'].hist(by=year_entity_entries['StemmedText'], histtype='bar',
+        plots = year_entity_entries['PublishingDate'].hist(by=year_entity_entries['Text'], histtype='bar',
                                                            alpha=0.8, bins=12)
         fig = plt.gca().figure
         title = "Top Entities from " + label + "  over time"
@@ -71,7 +70,7 @@ def ner_article_plots():
         values = []
         labels = []
         for entity in top_entities:
-            values.append(year_entity_entries[year_entity_entries.StemmedText == entity]['PublishingDate'])
+            values.append(year_entity_entries[year_entity_entries.Text == entity]['PublishingDate'])
             labels.append(entity)
         plt.hist(values, label=labels)
         plt.legend()
@@ -108,28 +107,40 @@ def generate_article_ner_frame():
         axis=1,
         keys=['Article_ID', 'Label', 'Text', 'StemmedText']
     )
+
+    num_unified_entities = 2000
+    print("Unifying top " + str(num_unified_entities) + " entity-texts based on stemmed text")
+    renamed_entities = entities.StemmedText.value_counts().head(num_unified_entities)
+    num_entities = len(renamed_entities)
+    current_entity = 1
+    for entity in renamed_entities.index.values:
+        if current_entity % 100 == 0:
+            print("Entity " + str(current_entity) + "/" + str(num_entities))
+        current_entity += 1
+        unified_text = entities[entities.StemmedText == entity].Text.values[0]
+        entities.Text[entities.StemmedText == entity] = unified_text
     return entities
 
 
 def create_co_occurrence_all():
     entities = dbase_helper.generate_pkl("prepared_ner_articles.pkl", generate_article_ner_frame)
     num_top_entities = 50
-    pandas.DataFrame(entities['StemmedText'].value_counts().head(num_top_entities)).plot.bar()
+    pandas.DataFrame(entities['Text'].value_counts().head(num_top_entities)).plot.bar()
     plt.title("Distribution of top " + str(num_top_entities) + " named entities over all "
               + str(entities['Article_ID'].size) + " Articles")
     plt.show()
 
-    word_occurrences = pandas.DataFrame(entities['StemmedText'].value_counts())
-    word_occurrences = word_occurrences[word_occurrences['StemmedText'] >= 10]
-    word_occurrences = word_occurrences.rename(columns={'StemmedText': 'NumOccurrences'})
+    word_occurrences = pandas.DataFrame(entities['Text'].value_counts())
+    word_occurrences = word_occurrences[word_occurrences['Text'] >= 10]
+    word_occurrences = word_occurrences.rename(columns={'Text': 'NumOccurrences'})
 
     interesting_words = word_occurrences.index.values
     create_co_occurrence_matrix(interesting_words, 'article_co_occurrences.csv')
 
     entities_without_locations = entities[entities.Label != 'LOC']
-    word_occurrences = pandas.DataFrame(entities_without_locations['StemmedText'].value_counts())
-    word_occurrences = word_occurrences[word_occurrences['StemmedText'] >= 10]
-    word_occurrences = word_occurrences.rename(columns={'StemmedText': 'NumOccurrences'})
+    word_occurrences = pandas.DataFrame(entities_without_locations['Text'].value_counts())
+    word_occurrences = word_occurrences[word_occurrences['Text'] >= 10]
+    word_occurrences = word_occurrences.rename(columns={'Text': 'NumOccurrences'})
     interesting_words = word_occurrences.index.values
     create_co_occurrence_matrix(interesting_words, 'article_co_occurrences_without_locations.csv')
     print("done")
@@ -137,15 +148,16 @@ def create_co_occurrence_all():
 
 def create_co_occurrence_matrix(interesting_words: [str], filename: str = None):
     entities = dbase_helper.generate_pkl("prepared_ner_articles.pkl", generate_article_ner_frame)
-    some = entities[entities['StemmedText'].isin(interesting_words)].groupby(by='Article_ID', as_index=False).agg(
-        lambda x: ' '.join(list(x)))[['Article_ID', 'StemmedText']]
+    some = entities[entities['Text'].isin(interesting_words)].groupby(by='Article_ID', as_index=False).agg(
+        lambda x: ' '.join(list(x)))[['Article_ID', 'Text']]
     interesting_articles = np.array(some['Article_ID'])
 
     percent_interesting_articles = (interesting_articles.size / np.unique(entities['Article_ID']).size) * 100
-    print("We look at " + str(round(percent_interesting_articles, 2)) + "% of all articles")
+    print("We look at " + str(len(interesting_words)) + " entities and therefore at "
+          + str(round(percent_interesting_articles, 2)) + "% of all articles for co-occurrence")
 
     count_model = CountVectorizer(ngram_range=(1, 1))  # default unigram model
-    X = count_model.fit_transform(np.array(some['StemmedText']))
+    X = count_model.fit_transform(np.array(some['Text']))
     names = count_model.get_feature_names()
     # X[X > 0] = 1 # run this line if you don't want extra within-text cooccurence (see below)
     Xc = (X.T * X)  # this is co-occurrence matrix in sparse csr format
