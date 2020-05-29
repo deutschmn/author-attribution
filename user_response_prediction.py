@@ -1,10 +1,6 @@
-import itertools
-
 import pandas
-import nltk
 import matplotlib.pyplot as plt
 import tensorflow as tf
-from collections import Counter
 import numpy as np
 
 import dbase_helper
@@ -126,8 +122,8 @@ def create_and_train_model(training_data):
     plt.legend()
     plt_helper.save_and_show_plot("User Response Prediction Training Loss (" + loss + ")")
 
-    plt.plot(history.history['mean_absolute_error'], label='mean absolute error')
-    plt.plot(history.history['val_mean_absolute_error'], label='mean validation error')
+    plt.plot(history.history['mae'], label='mean absolute error')
+    plt.plot(history.history['val_mae'], label='mean validation error')
     plt.xlabel('Epochs')
     plt.ylabel('MAE')
     plt.legend()
