@@ -103,6 +103,8 @@ def create_and_train_model(training_data):
                   optimizer=optimizer,
                   metrics=['mean_squared_logarithmic_error', 'mae'])
 
+    tf.keras.utils.plot_model(model, show_shapes=True, expand_nested=True,
+                              to_file='plots/user_response_prediction-model.png')
     model.summary()
 
     early_stop = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=2)
