@@ -8,15 +8,15 @@ from functools import reduce
 import operator
 import nltk.stem
 import gensim
+import spacy
 
 
-def tensorflow_approach():
-    df = pd.read_csv('articles.csv', sep=';', header=None, quotechar="'", quoting=0)
+def tensorflow_approach(data):
     vocabulary_size = 1000
     tokenizer = tf.keras.preprocessing.text.Tokenizer(num_words=vocabulary_size,
                                                       filters='!"#$%&()*+,-./:;<=>?@[\\]^_`{|}~\t\n', lower=True,
                                                       split=' ', char_level=False, oov_token=None)
-    data = df[1][0:400]
+    data = data[0:400]
     stemmer = nltk.stem.Cistem(case_insensitive=True)
     data = [stemmer.stem(sentence) for sentence in list(data)]
     tokenizer.fit_on_texts(data)
@@ -82,21 +82,25 @@ def tensorflow_approach():
     print("done")
 
 
-def gensim_approach():
-    df = pd.read_csv('articles.csv', sep=';', header=None, quotechar="'", quoting=0)
-    data = list(df[1])
+def gensim_approach(data, filename="word2vec", embedding_dim=300):
+    data = list(data)
+
     stemmer = nltk.stem.Cistem(case_insensitive=True)
     data = [stemmer.stem(sentence) for sentence in data]
     toktok = nltk.tokenize.ToktokTokenizer()
     data = [toktok.tokenize(sentence) for sentence in data]
 
     logging.basicConfig(format='%(asctime)s : %(levelname)s : %(message)s', level=logging.INFO)
-    model = gensim.models.Word2Vec(data, iter=1000, min_count=10, size=300, workers=4)
+    model = gensim.models.Word2Vec(data, iter=500, min_count=10, size=embedding_dim, workers=4)
     print("most common words: ", model.wv.index2word[0], model.wv.index2word[1], model.wv.index2word[2])
-    model.wv.save_word2vec_format("word2vec", binary=True)
-    print("done")
+    model.wv.save_word2vec_format(filename, binary=True)
+
+    return model.wv
 
 
 if __name__ == '__main__':
-    gensim_approach()
-    # tensorflow_approach()
+    df = pd.read_csv('articles.csv', sep=';', header=None, quotechar="'", quoting=0)
+    data = df[1]
+
+    gensim_approach(data)
+    # tensorflow_approach(data)
