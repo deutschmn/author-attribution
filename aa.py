@@ -3,6 +3,7 @@ from aa_classifier import AuthorClassifier
 from sklearn.model_selection import train_test_split
 import numpy as np
 import tensorflow as tf
+import kerastuner as kt
 
 
 def split_train_test_val(X, test_split, val_split, rand_seed):
@@ -43,18 +44,29 @@ if __name__ == '__main__':
     targets_train, targets_test, targets_val \
         = split_train_test_val(targets, test_split, val_split, rand_seed)
 
-    # TODO try different hyper-parameters using sklearn.model_selection
-    classifier = AuthorClassifier(epochs=100, dropout=0.15)
-
     num_article_category_1 = np.max(article_stats["ArticleCategory1"].cat.codes) + 1
     num_article_category_2 = np.max(article_stats["ArticleCategory2"].cat.codes) + 1
 
     X_train = prepare_input(embedded_posts_train, date_stats_train, article_stats_train,
                             num_article_category_1, num_article_category_2)
     X_val = prepare_input(embedded_posts_val, date_stats_val, article_stats_val,
-                            num_article_category_1, num_article_category_2)
-    classifier.fit(X_train, targets_train, X_val, targets_val)
+                          num_article_category_1, num_article_category_2)
 
-    X_test = prepare_input(embedded_posts_test, date_stats_test, article_stats_test)
-    test_score = classifier.score(X_test, targets_test)
-    print("Test score = " + str(test_score))
+    # build and train model
+    num_users = targets_train.shape[1]
+    num_dense_inputs = X_train["dense"].shape[1]
+    post_embedding_dimension = X_train["rnn"].shape[2]
+
+    classifier = AuthorClassifier(num_users, post_embedding_dimension, num_dense_inputs)
+
+    tuner = kt.Hyperband(classifier.build_model,
+                         objective='val_accuracy',
+                         max_epochs=15,
+                         factor=3,
+                         directory='hyperparams',
+                         project_name='author_identification')
+
+    tuner.search([X_train["rnn"], X_train["dense"]], targets_train,
+                 validation_data=([X_val["rnn"], X_val["dense"]], targets_val))
+
+    # X_test = prepare_input(embedded_posts_test, date_stats_test, article_stats_test)
