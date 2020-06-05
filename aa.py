@@ -64,7 +64,7 @@ if __name__ == '__main__':
                          max_epochs=15,
                          factor=3,
                          directory='hyperparams',
-                         project_name='author_identification')
+                         project_name='author_identification_2')
 
     tuner.search([X_train["rnn"], X_train["dense"]], targets_train,
                  validation_data=([X_val["rnn"], X_val["dense"]], targets_val))

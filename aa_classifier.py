@@ -10,15 +10,15 @@ class AuthorClassifier:
     def build_model(self, hp):
         rnn_types = {
             'gru': tf.keras.layers.GRU,
-            'lstm': tf.keras.layers.LSTM,
-            'simple': tf.keras.layers.SimpleRNN
+        #    'lstm': tf.keras.layers.LSTM,
+        #    'simple': tf.keras.layers.SimpleRNN
         }
 
         rnn_type = hp.Choice('rnn_type', values=list(rnn_types.keys()))
         rnn_type = rnn_types[rnn_type]
 
         # TODO used to use the number of users here, maybe try different params
-        rnn_dimension = hp.Int('rnn_dimension', min_value=100, max_value=300, step=50)
+        rnn_dimension = hp.Int('rnn_dimension', min_value=150, max_value=250, step=50)
 
         hidden_layer = [64, 32]  # TODO make work with hp.Fixed('hidden_layers' or Choice
 
@@ -27,7 +27,7 @@ class AuthorClassifier:
         masked = tf.keras.layers.Masking()(rnn_input)
         rnn = rnn_type(rnn_dimension, return_sequences=(len(hidden_layer) > 0))(masked)
 
-        dropout = hp.Choice('dropout', values=[0.0, 0.15, 0.3])
+        dropout = hp.Choice('dropout', values=[0.15, 0.3])
 
         if dropout > 0:
             rnn = tf.keras.layers.Dropout(dropout)(rnn)
@@ -42,12 +42,15 @@ class AuthorClassifier:
         # dense inputs
         dense_input = tf.keras.Input(shape=self.num_dense_inputs)
 
-        # TODO probably need another layer here, but let's see
-
         # output and model creation
         concat = tf.keras.layers.concatenate([rnn, dense_input], axis=1)
 
-        output = tf.keras.layers.Dense(self.num_users, activation='softmax')(concat)
+        final_dense = concat
+        final_dense_neurons = hp.Choice('neurons_final_dense_layers', values=[8, 16, 32, 64])
+        for i in range(hp.Int('num_final_dense_layers', min_value=0, max_value=4, step=1)):
+            final_dense = tf.keras.layers.Dense(final_dense_neurons, activation='relu')(final_dense)
+
+        output = tf.keras.layers.Dense(self.num_users, activation='softmax')(final_dense)
 
         model = tf.keras.Model(inputs=[rnn_input, dense_input],
                                outputs=[output])
