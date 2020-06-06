@@ -27,6 +27,7 @@ a.k.a. *authorship attribution* or *author identification*.
 * Parent Post User
   * always responds to same user
   * parent votes pos/neg (maybe root post)
+* Named Entities from Articles/Posts (Lukas)
 
 ### Stylometric (Patrick)
 
@@ -34,10 +35,6 @@ a.k.a. *authorship attribution* or *author identification*.
 
 * Same features for title
 * Total length of post/title
-
-* Named Entities from Articles/Posts (Lukas)
-
-
 
 ## Techniques
 
