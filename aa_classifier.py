@@ -1,20 +1,22 @@
 import tensorflow as tf
+from kerastuner import HyperModel
 
 
-class AuthorClassifier:
+class AuthorClassifier(HyperModel):
     def __init__(self, num_users, post_embedding_dimension, num_dense_inputs):
+        super().__init__()
         self.num_users = num_users
         self.post_embedding_dimension = post_embedding_dimension
         self.num_dense_inputs = num_dense_inputs
 
-    def build_model(self, hp):
+    def build(self, hp):
         rnn_types = {
             'gru': tf.keras.layers.GRU,
-        #    'lstm': tf.keras.layers.LSTM,
-        #    'simple': tf.keras.layers.SimpleRNN
+            'lstm': tf.keras.layers.LSTM,
+            'simple': tf.keras.layers.SimpleRNN
         }
 
-        rnn_type = hp.Choice('rnn_type', values=list(rnn_types.keys()))
+        rnn_type = hp.Fixed('rnn_type', 'gru')  # hp.Choice('rnn_type', values=list(rnn_types.keys()))
         rnn_type = rnn_types[rnn_type]
 
         # TODO used to use the number of users here, maybe try different params
@@ -46,8 +48,8 @@ class AuthorClassifier:
         concat = tf.keras.layers.concatenate([rnn, dense_input], axis=1)
 
         final_dense = concat
-        final_dense_neurons = hp.Choice('neurons_final_dense_layers', values=[8, 16, 32, 64])
-        for i in range(hp.Int('num_final_dense_layers', min_value=0, max_value=4, step=1)):
+        final_dense_neurons = hp.Choice('neurons_final_dense_layers', values=[32, 64, 128, 256])
+        for i in range(hp.Int('num_final_dense_layers', min_value=0, max_value=3, step=1)):
             final_dense = tf.keras.layers.Dense(final_dense_neurons, activation='relu')(final_dense)
 
         output = tf.keras.layers.Dense(self.num_users, activation='softmax')(final_dense)

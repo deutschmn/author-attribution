@@ -6,6 +6,9 @@ pkl_cache/
 # For now don't commit plots
 plots/
 
+checkpoints/
+.ipynb_checkpoints
+
 
 ### LaTeX ###
 ## Core latex/pdflatex auxiliary files:

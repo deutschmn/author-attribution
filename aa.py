@@ -59,14 +59,14 @@ if __name__ == '__main__':
 
     classifier = AuthorClassifier(num_users, post_embedding_dimension, num_dense_inputs)
 
-    tuner = kt.Hyperband(classifier.build_model,
+    tuner = kt.Hyperband(classifier,
                          objective='val_accuracy',
                          max_epochs=15,
                          factor=3,
                          directory='hyperparams',
-                         project_name='author_identification_2')
+                         project_name='author_identification_4')
 
     tuner.search([X_train["rnn"], X_train["dense"]], targets_train,
                  validation_data=([X_val["rnn"], X_val["dense"]], targets_val))
 
-    # X_test = prepare_input(embedded_posts_test, date_stats_test, article_stats_test)
+    print("done")
