@@ -14,20 +14,20 @@ def split_train_test_val(X, test_split, val_split, rand_seed):
     return X_train, X_test, X_val
 
 
-def prepare_input(embedded_posts, date_stats, article_stats, num_article_category_1, num_article_category_2):
-    rnn_inputs = embedded_posts
+def prepare_input(data, num_article_category_1, num_article_category_2):
+    rnn_inputs = data["embedded_posts"]
 
-    date_inputs = np.asarray(date_stats.drop("ID_Post", axis=1).drop("Timestamp", axis=1))
-    article_inputs = np.hstack([tf.keras.utils.to_categorical(article_stats["ArticleCategory1"].cat.codes,
+    date_inputs = np.asarray(data["date_stats"].drop("ID_Post", axis=1).drop("Timestamp", axis=1))
+    article_inputs = np.hstack([tf.keras.utils.to_categorical(data["article_stats"]["ArticleCategory1"].cat.codes,
                                                               num_classes=num_article_category_1),
-                                tf.keras.utils.to_categorical(article_stats["ArticleCategory2"].cat.codes,
+                                tf.keras.utils.to_categorical(data["article_stats"]["ArticleCategory2"].cat.codes,
                                                               num_classes=num_article_category_2)])
     dense_inputs = np.hstack([date_inputs, article_inputs])
     return {"rnn": np.asarray(rnn_inputs), "dense": np.asarray(dense_inputs)}
 
 
 if __name__ == '__main__':
-    posts, embedded_posts, date_stats, article_stats, article_entities, post_ratings, parent_posts, targets = prepare_data()
+    posts, data = prepare_data()
 
     # split data into train and validation
     rand_seed = np.random.randint(10000)
@@ -35,25 +35,24 @@ if __name__ == '__main__':
     test_split = 0.2
     val_split = 1 - train_split - test_split
 
-    embedded_posts_train, embedded_posts_test, embedded_posts_val \
-        = split_train_test_val(embedded_posts, test_split, val_split, rand_seed)
-    date_stats_train, date_stats_test, date_stats_val \
-        = split_train_test_val(date_stats, test_split, val_split, rand_seed)
-    article_stats_train, article_stats_test, article_stats_val \
-        = split_train_test_val(article_stats, test_split, val_split, rand_seed)
-    targets_train, targets_test, targets_val \
-        = split_train_test_val(targets, test_split, val_split, rand_seed)
+    training_data = {}
+    test_data = {}
+    validation_data = {}
+    for key in data.keys():
+        training_data[key], test_data[key], validation_data[key] = split_train_test_val(data[key], test_split,
+                                                                                        val_split,
+                                                                                        rand_seed)
 
-    num_article_category_1 = np.max(article_stats["ArticleCategory1"].cat.codes) + 1
-    num_article_category_2 = np.max(article_stats["ArticleCategory2"].cat.codes) + 1
+    num_article_category_1 = np.max(data["article_stats"]["ArticleCategory1"].cat.codes) + 1
+    num_article_category_2 = np.max(data["article_stats"]["ArticleCategory2"].cat.codes) + 1
 
-    X_train = prepare_input(embedded_posts_train, date_stats_train, article_stats_train,
+    X_train = prepare_input(training_data,
                             num_article_category_1, num_article_category_2)
-    X_val = prepare_input(embedded_posts_val, date_stats_val, article_stats_val,
+    X_val = prepare_input(validation_data,
                           num_article_category_1, num_article_category_2)
 
     # build and train model
-    num_users = targets_train.shape[1]
+    num_users = training_data["targets"].shape[1]
     num_dense_inputs = X_train["dense"].shape[1]
     post_embedding_dimension = X_train["rnn"].shape[2]
 
@@ -66,7 +65,7 @@ if __name__ == '__main__':
                          directory='hyperparams',
                          project_name='author_identification_4')
 
-    tuner.search([X_train["rnn"], X_train["dense"]], targets_train,
-                 validation_data=([X_val["rnn"], X_val["dense"]], targets_val))
+    tuner.search([X_train["rnn"], X_train["dense"]], training_data["targets"],
+                 validation_data=([X_val["rnn"], X_val["dense"]], validation_data["targets"]))
 
     print("done")

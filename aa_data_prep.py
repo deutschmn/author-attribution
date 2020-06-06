@@ -155,14 +155,13 @@ def prepare_data():
 
     # compute embeddings for user posts
     post_embeddings = load_or_create_post_embeddings(posts)
-    embedded_posts = load_or_embed_posts(posts, post_embeddings)
-
-    date_stats = compute_date_stats(posts)
-    article_stats = compute_article_category_stats(posts)
-    article_entities = encode_article_named_entities(posts)
-    post_ratings = load_post_ratings(posts)
-    parent_posts = load_parent_posts(posts)
-
-    targets = tf.keras.utils.to_categorical(posts["ID_User"].cat.codes)
-    # TODO: maybe its time for a dictionary ;)
-    return posts, embedded_posts, date_stats, article_stats, article_entities, post_ratings, parent_posts, targets
+    data = {
+            "embedded_posts": load_or_embed_posts(posts, post_embeddings),
+            "date_stats": compute_date_stats(posts),
+            "article_stats": compute_article_category_stats(posts),
+            "article_entities": encode_article_named_entities(posts),
+            "post_ratings": load_post_ratings(posts),
+            "parent_posts": load_parent_posts(posts),
+            "targets": tf.keras.utils.to_categorical(posts["ID_User"].cat.codes)
+            }
+    return posts, data
