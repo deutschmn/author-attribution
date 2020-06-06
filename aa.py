@@ -17,12 +17,23 @@ def split_train_test_val(X, test_split, val_split, rand_seed):
 def prepare_input(data, num_article_category_1, num_article_category_2):
     rnn_inputs = data["embedded_posts"]
 
+    # TODO: need to make sure all ID_Posts align, could also join frames together based on ID_Post to ensure this
+    assert all((data[key].ID_Post.values == data["date_stats"].ID_Post.values).all()
+               for key in ["article_stats", "post_ratings", "parent_posts", "article_entities"])
+
     date_inputs = np.asarray(data["date_stats"].drop("ID_Post", axis=1).drop("Timestamp", axis=1))
     article_inputs = np.hstack([tf.keras.utils.to_categorical(data["article_stats"]["ArticleCategory1"].cat.codes,
                                                               num_classes=num_article_category_1),
                                 tf.keras.utils.to_categorical(data["article_stats"]["ArticleCategory2"].cat.codes,
                                                               num_classes=num_article_category_2)])
-    dense_inputs = np.hstack([date_inputs, article_inputs])
+
+    # TODO: maybe dates should not contain floats -> easier to calculate and could prob. reduce size of
+    #  array significantly
+    dense_inputs = np.hstack([date_inputs,
+                              article_inputs,
+                              np.asarray(data["post_ratings"].drop("ID_Post", axis=1)),
+                              np.asarray(data["article_entities"].drop("ID_Post", axis=1)),
+                              np.asarray(data["parent_posts"].drop("ID_Post", axis=1))])
     return {"rnn": np.asarray(rnn_inputs), "dense": np.asarray(dense_inputs)}
 
 
