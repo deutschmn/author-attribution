@@ -18,21 +18,24 @@ a.k.a. *authorship attribution* or *author identification*.
 
 ## Features
 
-### Post Specific
+### Post Specific (Lukas)
 
 * CreatedAt time
-* Number of Pos/Neg votes
+* Number of Pos/Neg votes 
 * Exist Parent Post
   * is always just responding or does create own posts
 * Parent Post User
   * always responds to same user
+  * parent votes pos/neg (maybe root post)
 
-### Stylometric
+### Stylometric (Patrick)
 
 <img src="assets/image-20200606082356512.png" alt="image-20200606082356512" style="zoom:67%;" />
 
 * Same features for title
 * Total length of post/title
+
+* Named Entities from Articles/Posts (Lukas)
 
 
 
