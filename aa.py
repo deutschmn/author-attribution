@@ -27,7 +27,7 @@ def prepare_input(embedded_posts, date_stats, article_stats, num_article_categor
 
 
 if __name__ == '__main__':
-    posts, embedded_posts, date_stats, article_stats, targets = prepare_data()
+    posts, embedded_posts, date_stats, article_stats, article_entities, post_ratings, parent_posts, targets = prepare_data()
 
     # split data into train and validation
     rand_seed = np.random.randint(10000)

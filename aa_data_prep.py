@@ -1,11 +1,14 @@
-import dbase_helper
-import pandas as pd
-import numpy as np
-import embeddings.word2vec as word2vec
 import os.path
+
 import gensim
 import nltk.stem
+import numpy as np
+import pandas as pd
 import tensorflow as tf
+
+import dbase_helper
+import embeddings.word2vec as word2vec
+import ner
 
 DEBUG = False  # TODO change
 
@@ -26,7 +29,8 @@ def compute_article_category_stats(posts):
     article_cat_stats["ID_Post"] = posts["ID_Post"]
 
     article_cat_stats["ArticleCategory1"] = posts["Path"].apply(lambda x: x.split("/")[0]).astype('category')
-    article_cat_stats["ArticleCategory2"] = posts["Path"].apply(lambda x: x.split("/")[int("/" in x)]).astype('category')
+    article_cat_stats["ArticleCategory2"] = posts["Path"].apply(lambda x: x.split("/")[int("/" in x)]).astype(
+        'category')
     article_cat_stats["ArticleCategoryFull"] = posts["Path"].astype('category')
 
     return article_cat_stats
@@ -108,6 +112,44 @@ def embed_posts(posts, post_embeddings, max_words):
     return tf.keras.preprocessing.sequence.pad_sequences(df["embeddings"], padding='post', maxlen=max_words)
 
 
+def encode_article_named_entities(posts):
+    entities = dbase_helper.generate_pkl("prepared_ner_articles.pkl", ner.generate_article_ner_frame)
+
+    # Select named entities with minimal occurrence
+    minimal_number_word_occurrences = 20
+    word_occurrences = pd.DataFrame(entities['Text'].value_counts())
+    word_occurrences = word_occurrences[word_occurrences['Text'] >= minimal_number_word_occurrences]
+    word_occurrences = word_occurrences.rename(columns={'Text': 'NumOccurrences'})
+    entity_occurrences, co_occurrences = ner.create_co_occurrence_matrix(word_occurrences.index.values)
+    num_articles = dbase_helper.query_to_data_frame("""
+        SELECT MAX(Articles.ID_Article) FROM Articles;
+        """, "number_articles.pkl")[0][0]
+    entity_occurrences = entity_occurrences.reindex(index=range(num_articles), fill_value=0).astype('uint8')
+    posts = posts[['ID_Post', 'ID_Article']]
+    posts_entity_occurrences_in_article = posts.join(entity_occurrences, on='ID_Article').drop('ID_Article', axis=1)
+    return posts_entity_occurrences_in_article
+
+
+def load_post_ratings(posts):
+    post_ratings = dbase_helper.query_to_data_frame("""
+            SELECT Posts.ID_Post, Posts.PositiveVotes, Posts.NegativeVotes FROM Posts;
+            """, "post_votes.pkl")
+    post_ratings.columns = ["ID_Post", "PositiveVotes", "NegativeVotes"]
+    post_ratings[["PositiveVotes", "NegativeVotes"]] = post_ratings[["PositiveVotes", "NegativeVotes"]].astype('uint16')
+    return post_ratings[post_ratings.ID_Post.isin(posts.ID_Post)]
+
+
+def load_parent_posts(posts):
+    parent_posts = dbase_helper.query_to_data_frame("""
+                SELECT Posts.ID_Post, Posts.ID_Parent_Post FROM Posts;
+                """, "post_parents.pkl")
+    parent_posts.columns = ["ID_Post", "ID_Parent_Post"]
+
+    # For now just encode if there exists a parent post
+    parent_posts["Parent_Post"] = parent_posts.ID_Parent_Post >= 0
+    return parent_posts[["ID_Post", "Parent_Post"]][parent_posts.ID_Post.isin(posts.ID_Post)]
+
+
 def prepare_data():
     posts = load_raw_posts()
 
@@ -117,7 +159,10 @@ def prepare_data():
 
     date_stats = compute_date_stats(posts)
     article_stats = compute_article_category_stats(posts)
+    article_entities = encode_article_named_entities(posts)
+    post_ratings = load_post_ratings(posts)
+    parent_posts = load_parent_posts(posts)
 
     targets = tf.keras.utils.to_categorical(posts["ID_User"].cat.codes)
-
-    return posts, embedded_posts, date_stats, article_stats, targets
+    # TODO: maybe its time for a dictionary ;)
+    return posts, embedded_posts, date_stats, article_stats, article_entities, post_ratings, parent_posts, targets
