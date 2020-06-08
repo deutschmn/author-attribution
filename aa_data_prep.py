@@ -37,7 +37,10 @@ def compute_article_category_stats(posts):
         'category')
     article_cat_stats["ArticleCategoryFull"] = posts["Path"].astype('category')
 
-    article_inputs = tf.keras.utils.to_categorical(article_cat_stats["ArticleCategory1"].cat.codes)
+    article_categories_1 = tf.keras.utils.to_categorical(article_cat_stats["ArticleCategory1"].cat.codes)
+    article_categories_2 = tf.keras.utils.to_categorical(article_cat_stats["ArticleCategory2"].cat.codes)
+
+    article_inputs = np.hstack([article_categories_1, article_categories_2])
 
     return article_inputs
 
@@ -170,6 +173,7 @@ def prepare_data():
         "targets": tf.keras.utils.to_categorical(posts["ID_User"].cat.codes)
     }
 
-    # TODO: need to make sure all ID_Posts align, could also join frames together based on ID_Post to ensure this
+    # TODO: need to make sure all ID_Posts align, (-> maybe ensure in preparation already?)
+    #  could also join frames together based on ID_Post to ensure this (-> bit of a pain with 3D post embeddings)
 
     return posts, data
