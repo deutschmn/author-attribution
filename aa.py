@@ -102,7 +102,7 @@ if __name__ == '__main__':
         "parent_posts": data["parent_posts"],
     }
 
-    search_title = 'all'
+    search_title = 'all_layers_after_dense_input_1'
 
     hyper_parameter_search(rnn_inputs, dense_inputs, data["targets"], search_title=search_title)
 

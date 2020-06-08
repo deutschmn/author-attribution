@@ -22,7 +22,7 @@ class AuthorClassifier(HyperModel):
         rnn_type = hp.Fixed('rnn_type', 'gru')  # hp.Choice('rnn_type', values=list(rnn_types.keys()))
         rnn_type = rnn_types[rnn_type]
 
-        rnn_dimension = hp.Int('rnn_dimension', min_value=150, max_value=250, step=50)
+        rnn_dimension = hp.Fixed('rnn_dimension', 200)  # hp.Int('rnn_dimension', min_value=150, max_value=250, step=50)
 
         hidden_layer = [hp.Fixed("rnn_hidden_layer_1_units", 64),
                         hp.Fixed("rnn_hidden_layer_2_units", 32)]
@@ -38,7 +38,7 @@ class AuthorClassifier(HyperModel):
             masked = tf.keras.layers.Masking()(rnn_input)
             rnn = rnn_type(rnn_dimension, return_sequences=(len(hidden_layer) > 0))(masked)
 
-            dropout = hp.Choice('dropout', values=[0.15, 0.3])
+            dropout = hp.Fixed('dropout', 0.3)  # hp.Choice('dropout', values=[0.15, 0.3])
 
             if dropout > 0:
                 rnn = tf.keras.layers.Dropout(dropout)(rnn)
@@ -56,7 +56,17 @@ class AuthorClassifier(HyperModel):
         if self.num_dense_inputs > 0:
             dense_input = tf.keras.Input(shape=self.num_dense_inputs)
             inputs.append(dense_input)
-            concats.append(dense_input)
+
+            num_after_dense_input_layers = \
+                hp.Int('num_after_dense_input_layers', min_value=0, max_value=3, step=1)
+            num_after_dense_input_layer_neurons = \
+                hp.Int('num_after_dense_input_layer_neurons', min_value=30, max_value=200, step=30)
+
+            dense_output = dense_input
+            for i in range(num_after_dense_input_layers):
+                dense_output = tf.keras.layers.Dense(num_after_dense_input_layer_neurons)(dense_output)
+
+            concats.append(dense_output)
 
         # output and model creation
         if len(concats) > 1:
@@ -65,8 +75,9 @@ class AuthorClassifier(HyperModel):
             concat = concats[0]
 
         final_dense = concat
-        final_dense_neurons = hp.Choice('neurons_final_dense_layers', values=[32, 64, 128, 256])
-        for i in range(hp.Int('num_final_dense_layers', min_value=0, max_value=3, step=1)):
+        final_dense_neurons = hp.Choice('neurons_final_dense_layers', values=[128, 256, 512])
+        num_final_dense_layers = hp.Fixed("num_final_dense_layers", 1)  # hp.Int('num_final_dense_layers', min_value=0, max_value=3, step=1)
+        for i in range(num_final_dense_layers):
             final_dense = tf.keras.layers.Dense(final_dense_neurons, activation='relu')(final_dense)
 
         output = tf.keras.layers.Dense(self.num_users, activation='softmax')(final_dense)
