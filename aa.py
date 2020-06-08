@@ -1,82 +1,109 @@
 from aa_data_prep import prepare_data
 from aa_classifier import AuthorClassifier
-from sklearn.model_selection import train_test_split
 import numpy as np
-import tensorflow as tf
 import kerastuner as kt
+import datetime
+import json
+import pathlib
 
 
-def split_train_test_val(X, test_split, val_split, rand_seed):
-    X_train, X_test \
-        = train_test_split(X, test_size=test_split, random_state=rand_seed)
-    X_train, X_val \
-        = train_test_split(X_train, test_size=val_split / (1 - test_split), random_state=rand_seed)
-    return X_train, X_test, X_val
+def log_run_inputs(num_users, num_dense_inputs, num_rnn_inputs, num_rnn_inputs_dimension, num_train_samples):
+    input_info = {
+        "rnn_inputs": list(rnn_inputs.keys()),
+        "dense_inputs": list(dense_inputs.keys()),
+        "input_dimensions": {
+            "num_users": num_users,
+            "num_dense_inputs": num_dense_inputs,
+            "num_rnn_inputs": num_rnn_inputs,
+            "num_rnn_inputs_dimension": num_rnn_inputs_dimension,
+            "num_train_samples": num_train_samples
+        }
+    }
+    j = json.dumps(input_info)
+    with open("hyperparams/" + search_title + "/inputs.json", "w") as json_file:
+        json_file.write(j)
 
 
-def prepare_input(data, num_article_category_1, num_article_category_2):
-    rnn_inputs = data["embedded_posts"]
+def hyper_parameter_search(rnn_inputs, dense_inputs, targets: np.array,
+                           validation_split=0.2, search_title=None):
+    """
+    Perfoms a hyper-parameter search on the network, writes it to the file system and return resulting tuner
+    :param rnn_inputs: dictionary with inputs to RNN (shapes Nx?, N = #posts)
+    :param dense_inputs: dictionary with inputs to dense branch (shapes Nx?, N = #posts)
+    :param targets: one-hot encoded target users as numpy array with (shape NxM, N = #posts, M = #users)
+    :param validation_split: percentage of samples that should be used for validation
+    :param search_title: title of the search, used to write logs to file system
+    :return: Keras tuner object
+    """
 
-    # TODO: need to make sure all ID_Posts align, could also join frames together based on ID_Post to ensure this
-    assert all((data[key].ID_Post.values == data["date_stats"].ID_Post.values).all()
-               for key in ["article_stats", "post_ratings", "parent_posts", "article_entities"])
+    if search_title is None:
+        search_title = "search_" + datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 
-    date_inputs = np.asarray(data["date_stats"].drop("ID_Post", axis=1).drop("Timestamp", axis=1))
-    article_inputs = np.hstack([tf.keras.utils.to_categorical(data["article_stats"]["ArticleCategory1"].cat.codes,
-                                                              num_classes=num_article_category_1),
-                                tf.keras.utils.to_categorical(data["article_stats"]["ArticleCategory2"].cat.codes,
-                                                              num_classes=num_article_category_2)])
+    num_train_samples = targets.shape[0]
 
-    # TODO: maybe dates should not contain floats -> easier to calculate and could prob. reduce size of
-    #  array significantly
-    dense_inputs = np.hstack([date_inputs,
-                              article_inputs,
-                              np.asarray(data["post_ratings"].drop("ID_Post", axis=1)),
-                              np.asarray(data["article_entities"].drop("ID_Post", axis=1)),
-                              np.asarray(data["parent_posts"].drop("ID_Post", axis=1))])
-    return {"rnn": np.asarray(rnn_inputs), "dense": np.asarray(dense_inputs)}
+    assert len(rnn_inputs) > 0 or len(dense_inputs) > 0, "no inputs"
 
+    inputs = []
 
-if __name__ == '__main__':
-    posts, data = prepare_data()
+    if len(rnn_inputs) == 0:
+        rnn_network_inputs = np.zeros((num_train_samples, 0, 0))
+    else:
+        rnn_network_inputs = np.hstack(rnn_inputs.values())
+        inputs.append(rnn_network_inputs)
 
-    # split data into train and validation
-    rand_seed = np.random.randint(10000)
-    train_split = 0.6
-    test_split = 0.2
-    val_split = 1 - train_split - test_split
+    if len(dense_inputs) == 0:
+        dense_network_inputs = np.zeros((num_train_samples, 0))
+    else:
+        dense_network_inputs = np.hstack(dense_inputs.values())
+        inputs.append(dense_network_inputs)
 
-    training_data = {}
-    test_data = {}
-    validation_data = {}
-    for key in data.keys():
-        training_data[key], test_data[key], validation_data[key] = split_train_test_val(data[key], test_split,
-                                                                                        val_split,
-                                                                                        rand_seed)
+    assert targets.shape[0] == dense_network_inputs.shape[0] == rnn_network_inputs.shape[0], \
+        "non-matching number of samples for inputs and targets"
 
-    num_article_category_1 = np.max(data["article_stats"]["ArticleCategory1"].cat.codes) + 1
-    num_article_category_2 = np.max(data["article_stats"]["ArticleCategory2"].cat.codes) + 1
+    pathlib.Path("hyperparams/" + search_title).mkdir(parents=True, exist_ok=True)
 
-    X_train = prepare_input(training_data,
-                            num_article_category_1, num_article_category_2)
-    X_val = prepare_input(validation_data,
-                          num_article_category_1, num_article_category_2)
+    num_users = targets.shape[1]
+    num_dense_inputs = dense_network_inputs.shape[1]
+    num_rnn_inputs = rnn_network_inputs.shape[1]
+    num_rnn_inputs_dimension = rnn_network_inputs.shape[2]
 
-    # build and train model
-    num_users = training_data["targets"].shape[1]
-    num_dense_inputs = X_train["dense"].shape[1]
-    post_embedding_dimension = X_train["rnn"].shape[2]
+    log_run_inputs(num_users, num_dense_inputs, num_rnn_inputs, num_rnn_inputs_dimension, num_train_samples)
 
-    classifier = AuthorClassifier(num_users, post_embedding_dimension, num_dense_inputs)
+    classifier = AuthorClassifier(num_users, num_dense_inputs, num_rnn_inputs,
+                                  num_rnn_inputs_dimension, num_train_samples, search_title)
 
     tuner = kt.Hyperband(classifier,
                          objective='val_accuracy',
                          max_epochs=15,
                          factor=3,
                          directory='hyperparams',
-                         project_name='author_identification_4')
+                         project_name=search_title)
 
-    tuner.search([X_train["rnn"], X_train["dense"]], training_data["targets"],
-                 validation_data=([X_val["rnn"], X_val["dense"]], validation_data["targets"]))
+    tuner.search(inputs, targets, validation_split=validation_split)
+
+    print("Hyper-parameters search '" + search_title + "' completed. Top results:")
+    tuner.results_summary(5)
+
+    return tuner
+
+
+if __name__ == '__main__':
+    posts, data = prepare_data()
+
+    rnn_inputs = {
+        "embedded_posts": data["embedded_posts"]
+    }
+
+    dense_inputs = {
+        "date_stats": data["date_stats"],
+        "article_stats": data["article_stats"],
+        "article_entities": data["article_entities"],
+        "post_ratings": data["post_ratings"],
+        "parent_posts": data["parent_posts"],
+    }
+
+    search_title = 'all'
+
+    hyper_parameter_search(rnn_inputs, dense_inputs, data["targets"], search_title=search_title)
 
     print("done")

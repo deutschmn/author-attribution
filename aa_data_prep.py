@@ -10,7 +10,7 @@ import dbase_helper
 import embeddings.word2vec as word2vec
 import ner
 
-DEBUG = False  # TODO change
+DEBUG = False
 
 
 def compute_date_stats(posts):
@@ -21,7 +21,11 @@ def compute_date_stats(posts):
     date_stats["Timestamp"] = posts["CreatedAt"].apply(lambda x: x.value)
     date_stats["DayOfWeek"] = posts["CreatedAt"].apply(lambda x: x.dayofweek)
 
-    return date_stats
+    # TODO: maybe dates should not contain floats -> easier to calculate and could prob. reduce size of
+    #  array significantly
+    date_inputs = np.asarray(date_stats.drop("ID_Post", axis=1).drop("Timestamp", axis=1))
+
+    return date_inputs
 
 
 def compute_article_category_stats(posts):
@@ -33,7 +37,9 @@ def compute_article_category_stats(posts):
         'category')
     article_cat_stats["ArticleCategoryFull"] = posts["Path"].astype('category')
 
-    return article_cat_stats
+    article_inputs = tf.keras.utils.to_categorical(article_cat_stats["ArticleCategory1"].cat.codes)
+
+    return article_inputs
 
 
 def load_raw_posts():
@@ -127,7 +133,7 @@ def encode_article_named_entities(posts):
     entity_occurrences = entity_occurrences.reindex(index=range(num_articles), fill_value=0).astype('uint8')
     posts = posts[['ID_Post', 'ID_Article']]
     posts_entity_occurrences_in_article = posts.join(entity_occurrences, on='ID_Article').drop('ID_Article', axis=1)
-    return posts_entity_occurrences_in_article
+    return posts_entity_occurrences_in_article.drop("ID_Post", axis=1)
 
 
 def load_post_ratings(posts):
@@ -136,7 +142,7 @@ def load_post_ratings(posts):
             """, "post_votes.pkl")
     post_ratings.columns = ["ID_Post", "PositiveVotes", "NegativeVotes"]
     post_ratings[["PositiveVotes", "NegativeVotes"]] = post_ratings[["PositiveVotes", "NegativeVotes"]].astype('uint16')
-    return post_ratings[post_ratings.ID_Post.isin(posts.ID_Post)]
+    return post_ratings[post_ratings.ID_Post.isin(posts.ID_Post)].drop("ID_Post", axis=1)
 
 
 def load_parent_posts(posts):
@@ -147,21 +153,23 @@ def load_parent_posts(posts):
 
     # For now just encode if there exists a parent post
     parent_posts["Parent_Post"] = parent_posts.ID_Parent_Post >= 0
-    return parent_posts[["ID_Post", "Parent_Post"]][parent_posts.ID_Post.isin(posts.ID_Post)]
+    return parent_posts[["ID_Post", "Parent_Post"]][parent_posts.ID_Post.isin(posts.ID_Post)].drop("ID_Post", axis=1)
 
 
 def prepare_data():
     posts = load_raw_posts()
 
-    # compute embeddings for user posts
     post_embeddings = load_or_create_post_embeddings(posts)
     data = {
-            "embedded_posts": load_or_embed_posts(posts, post_embeddings),
-            "date_stats": compute_date_stats(posts),
-            "article_stats": compute_article_category_stats(posts),
-            "article_entities": encode_article_named_entities(posts),
-            "post_ratings": load_post_ratings(posts),
-            "parent_posts": load_parent_posts(posts),
-            "targets": tf.keras.utils.to_categorical(posts["ID_User"].cat.codes)
-            }
+        "embedded_posts": load_or_embed_posts(posts, post_embeddings),
+        "date_stats": compute_date_stats(posts),
+        "article_stats": compute_article_category_stats(posts),
+        "article_entities": encode_article_named_entities(posts),
+        "post_ratings": load_post_ratings(posts),
+        "parent_posts": load_parent_posts(posts),
+        "targets": tf.keras.utils.to_categorical(posts["ID_User"].cat.codes)
+    }
+
+    # TODO: need to make sure all ID_Posts align, could also join frames together based on ID_Post to ensure this
+
     return posts, data
