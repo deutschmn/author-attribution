@@ -100,9 +100,10 @@ if __name__ == '__main__':
         "article_entities": data["article_entities"],
         "post_ratings": data["post_ratings"],
         "parent_posts": data["parent_posts"],
+        "stylometric_features": data["stylometric"]
     }
 
-    search_title = 'all_layers_after_dense_input_1'
+    search_title = 'add_style'
 
     hyper_parameter_search(rnn_inputs, dense_inputs, data["targets"], search_title=search_title)
 

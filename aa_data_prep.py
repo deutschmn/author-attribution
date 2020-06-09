@@ -5,6 +5,7 @@ import nltk.stem
 import numpy as np
 import pandas as pd
 import tensorflow as tf
+import re
 
 import dbase_helper
 import embeddings.word2vec as word2vec
@@ -159,11 +160,38 @@ def load_parent_posts(posts):
     return parent_posts[["ID_Post", "Parent_Post"]][parent_posts.ID_Post.isin(posts.ID_Post)].drop("ID_Post", axis=1)
 
 
+def compute_stylometric_features(posts):
+    style = pd.DataFrame(posts["ID_Post"])
+
+    # ratios - TODO also title?
+    def ratio(x, **kwargs): return len(re.findall(kwargs["regex"], x)) / len(x)
+    style["alpha-chars-ratio"] = posts["p.Body"].apply(ratio, regex="[a-zA-ZäöüßÄÖÜ]")
+    style["digit-chars-ratio"] = posts["p.Body"].apply(ratio, regex="\\d")
+    style["upper-chars-ratio"] = posts["p.Body"].apply(ratio, regex="[A-ZÄÖÜ]")
+    style["white-chars-ratio"] = posts["p.Body"].apply(ratio, regex="\\s")
+
+    # lengths
+    style["post-length"] = posts["p.Body"].apply(len)
+    style["headline-length"] = posts["Headline"].apply(len)
+
+    toktok = nltk.tokenize.ToktokTokenizer()
+
+    style["average-word-length"] = \
+        posts["p.Body"].apply(lambda x: np.average(list(map(len, toktok.tokenize(x)))))
+    style["average-sentence-char-length"] = \
+        posts["p.Body"].apply(lambda x: np.average(list(map(len, nltk.sent_tokenize(x)))))
+    style["average-sentence-word-length"] = \
+        posts["p.Body"].apply(lambda x: np.average(list(map(len, map(toktok.tokenize, nltk.sent_tokenize(x))))))
+
+    return style.drop("ID_Post", axis=1)
+
+
 def prepare_data():
     posts = load_raw_posts()
 
     post_embeddings = load_or_create_post_embeddings(posts)
     data = {
+        "stylometric": compute_stylometric_features(posts),
         "embedded_posts": load_or_embed_posts(posts, post_embeddings),
         "date_stats": compute_date_stats(posts),
         "article_stats": compute_article_category_stats(posts),
