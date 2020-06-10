@@ -22,8 +22,6 @@ def compute_date_stats(posts):
     date_stats["Timestamp"] = posts["CreatedAt"].apply(lambda x: x.value)
     date_stats["DayOfWeek"] = posts["CreatedAt"].apply(lambda x: x.dayofweek)
 
-    # TODO: maybe dates should not contain floats -> easier to calculate and could prob. reduce size of
-    #  array significantly
     date_inputs = np.asarray(date_stats.drop("ID_Post", axis=1).drop("Timestamp", axis=1))
 
     return date_inputs
