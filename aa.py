@@ -8,7 +8,8 @@ import json
 import pathlib
 
 
-def log_run_inputs(rnn_inputs, dense_inputs, num_users, num_dense_inputs, num_rnn_inputs, num_rnn_inputs_dimension, num_train_samples):
+def log_run_inputs(rnn_inputs, dense_inputs, num_users, num_dense_inputs, num_rnn_inputs, num_rnn_inputs_dimension,
+                   num_train_samples, search_title):
     input_info = {
         "rnn_inputs": list(rnn_inputs.keys()),
         "dense_inputs": list(dense_inputs.keys()),
@@ -71,7 +72,7 @@ def hyper_parameter_search(rnn_inputs, dense_inputs, targets: np.array,
     num_rnn_inputs_dimension = rnn_network_inputs.shape[2]
 
     log_run_inputs(rnn_inputs, dense_inputs,
-                   num_users, num_dense_inputs, num_rnn_inputs, num_rnn_inputs_dimension, num_train_samples)
+                   num_users, num_dense_inputs, num_rnn_inputs, num_rnn_inputs_dimension, num_train_samples, search_title)
 
     classifier = AuthorClassifier(num_users, num_dense_inputs, num_rnn_inputs,
                                   num_rnn_inputs_dimension, num_train_samples, search_title)
