@@ -82,7 +82,8 @@ def hyper_parameter_search(rnn_inputs, dense_inputs, targets: np.array,
                          objective='val_accuracy',
                          max_epochs=15,
                          factor=3,
-                         directory='tensorboard_logs')
+                         directory='hyperparams',
+                         project_name=search_title)
 
     stop_callback = tf.keras.callbacks.EarlyStopping(
         monitor='val_accuracy', patience=3)
