@@ -4,13 +4,14 @@ from kerastuner import HyperModel
 
 class AuthorClassifier(HyperModel):
     def __init__(self, num_users, num_dense_inputs, num_rnn_inputs,
-                 num_rnn_inputs_dimension, num_train_samples, search_title):
+                 num_rnn_inputs_dimension, num_train_samples, search_title, model_name="model"):
         super().__init__()
         self.num_users = num_users
         self.num_rnn_inputs = num_rnn_inputs
         self.num_rnn_inputs_dimension = num_rnn_inputs_dimension
         self.num_dense_inputs = num_dense_inputs
         self.search_title = search_title
+        self.model_name = model_name
 
     def build(self, hp):
         rnn_types = {
@@ -32,29 +33,29 @@ class AuthorClassifier(HyperModel):
         inputs = []
 
         if self.num_rnn_inputs > 0:
-            rnn_input = tf.keras.Input(shape=(None, self.num_rnn_inputs_dimension))
+            rnn_input = tf.keras.Input(shape=(None, self.num_rnn_inputs_dimension), name="rnn_input_layer")
             inputs.append(rnn_input)
 
-            masked = tf.keras.layers.Masking(name="initial_masking_layer")(rnn_input)
-            rnn = rnn_type(rnn_dimension, return_sequences=(len(hidden_layer) > 0), name="rnn_embedding_layer")(masked)
+            masked = tf.keras.layers.Masking(name="rnn_masking_layer")(rnn_input)
+            rnn = rnn_type(rnn_dimension, return_sequences=(len(hidden_layer) > 0), name="rnn_layer")(masked)
 
             dropout = hp.Fixed('dropout', 0.3)  # hp.Choice('dropout', values=[0.15, 0.3])
 
             if dropout > 0:
-                rnn = tf.keras.layers.Dropout(dropout)(rnn)
+                rnn = tf.keras.layers.Dropout(dropout, name="rnn_initial_dropout")(rnn)
 
             for (i, hidden_neurons) in enumerate(hidden_layer):
                 is_last_rnn_layer = i == len(hidden_layer) - 1
-                rnn = rnn_type(hidden_neurons, return_sequences=not is_last_rnn_layer, name="rnn_layer_" + str(i))(rnn)
+                rnn = rnn_type(hidden_neurons, return_sequences=not is_last_rnn_layer, name="rnn_hidden_layer_" + str(i))(rnn)
 
                 if dropout > 0:
-                    rnn = tf.keras.layers.Dropout(dropout)(rnn)
+                    rnn = tf.keras.layers.Dropout(dropout, name="rnn_dropout_" + str(i))(rnn)
 
             concats.append(rnn)
 
         # dense inputs
         if self.num_dense_inputs > 0:
-            dense_input = tf.keras.Input(shape=self.num_dense_inputs)
+            dense_input = tf.keras.Input(shape=self.num_dense_inputs, name="dense_input_layer")
             inputs.append(dense_input)
 
             num_after_dense_input_layers = \
@@ -66,9 +67,9 @@ class AuthorClassifier(HyperModel):
             dense_output = dense_input
             for i in range(num_after_dense_input_layers):
                 dense_output = tf.keras.layers.Dense(num_after_dense_input_layer_neurons, activation='relu',
-                                                     name="dense_inputs_hidden_layer_" + str(i))(dense_output)
+                                                     name="dense_hidden_layer_" + str(i))(dense_output)
                 if dense_dropout != 0 and i != (num_after_dense_input_layers - 1):
-                    dense_output = tf.keras.layers.Dropout(dense_dropout)(dense_output)
+                    dense_output = tf.keras.layers.Dropout(dense_dropout, name="dense_dropout_" + str(i))(dense_output)
 
             concats.append(dense_output)
 
@@ -83,19 +84,19 @@ class AuthorClassifier(HyperModel):
         num_final_dense_layers = hp.Fixed("num_final_dense_layers", 1)  # hp.Int('num_final_dense_layers', min_value=0, max_value=3, step=1)
         for i in range(num_final_dense_layers):
             final_dense = tf.keras.layers.Dense(final_dense_neurons, activation='relu',
-                                                name="concatinated_dense_layer_" + str(i))(final_dense)
+                                                name="concatenated_dense_layer_" + str(i))(final_dense)
 
-        output = tf.keras.layers.Dense(self.num_users, activation='softmax', name="final_dense_layer")(final_dense)
+        output = tf.keras.layers.Dense(self.num_users, activation='softmax', name="final_layer")(final_dense)
 
         model = tf.keras.Model(inputs=inputs,
-                               outputs=[output])
+                               outputs=[output],
+                               name=self.model_name)
 
         model.compile(loss='categorical_crossentropy',
                       optimizer='adam',
                       metrics=['accuracy'])
-
         model.summary()
-        tf.keras.utils.plot_model(model, "hyperparams/" + self.search_title + "/model.png",
+        tf.keras.utils.plot_model(model, "hyperparams/" + self.search_title + "/" + str(self.model_name) + ".png",
                                   show_shapes=True, expand_nested=True)
 
         return model

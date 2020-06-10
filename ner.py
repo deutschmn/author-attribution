@@ -1,7 +1,4 @@
-import functools
-
 import pandas
-import flair  # https://github.com/flairNLP/flair
 import nltk
 import re
 import matplotlib.pyplot as plt

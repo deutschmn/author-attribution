@@ -27,7 +27,7 @@ def log_run_inputs(rnn_inputs, dense_inputs, num_users, num_dense_inputs, num_rn
 
 
 def hyper_parameter_search(rnn_inputs, dense_inputs, targets: np.array,
-                           validation_split=0.2, search_title=None):
+                           validation_split=0.2, search_title=None, model_name=None):
     """
     Perfoms a hyper-parameter search on the network, writes it to the file system and return resulting tuner
     :param rnn_inputs: dictionary with inputs to RNN (shapes Nx?, N = #posts)
@@ -35,6 +35,7 @@ def hyper_parameter_search(rnn_inputs, dense_inputs, targets: np.array,
     :param targets: one-hot encoded target users as numpy array with (shape NxM, N = #posts, M = #users)
     :param validation_split: percentage of samples that should be used for validation
     :param search_title: title of the search, used to write logs to file system
+    :param model_name: name of the model
     :return: Keras tuner object
     """
 
@@ -75,7 +76,7 @@ def hyper_parameter_search(rnn_inputs, dense_inputs, targets: np.array,
                    num_users, num_dense_inputs, num_rnn_inputs, num_rnn_inputs_dimension, num_train_samples, search_title)
 
     classifier = AuthorClassifier(num_users, num_dense_inputs, num_rnn_inputs,
-                                  num_rnn_inputs_dimension, num_train_samples, search_title)
+                                  num_rnn_inputs_dimension, num_train_samples, search_title, model_name)
 
     tensorboard_log_dir = "tensorboard_logs/" + search_title
     tuner = kt.Hyperband(classifier,
@@ -120,7 +121,8 @@ if __name__ == '__main__':
     }
 
     search_title = 'add_style'
+    model_name = "AuthorAttributionModel"
 
-    hyper_parameter_search(rnn_inputs, dense_inputs, data["targets"], search_title=search_title)
+    hyper_parameter_search(rnn_inputs, dense_inputs, data["targets"], search_title=search_title, model_name=model_name)
 
     print("done")
