@@ -30,18 +30,18 @@ def convert_date(dstring):
     return pandas.datetime.strptime(dstring, '%Y-%m-%d %H:%M:%S.%f')
 
 
-def generate_pkl(pkl_cache_fname: str, function: Callable[[any], pandas.DataFrame], *args, **kwargs):
+def generate_pkl_cached(pkl_cache_fname: str, function: Callable[[any], pandas.DataFrame], *args, **kwargs):
     if pkl_cache_fname is not None:
         try:
             if not os.path.exists(PKL_CACHE_FOLDER):
                 os.makedirs(PKL_CACHE_FOLDER)
             return pandas.read_pickle(PKL_CACHE_FOLDER + "/" + pkl_cache_fname)
         except (FileNotFoundError, IOError):
-            frame = function(*args, *kwargs)
+            frame = function(*args, **kwargs)
             frame.to_pickle(PKL_CACHE_FOLDER + "/" + pkl_cache_fname)
             return frame
     else:
-        return function(*args, *kwargs)
+        return function(*args, **kwargs)
 
 
 def query_to_data_frame(sql: str, pkl_cache_fname):
@@ -51,7 +51,7 @@ def query_to_data_frame(sql: str, pkl_cache_fname):
         curs.execute(sql)
         frame = pandas.DataFrame(curs.fetchall())
         return frame
-    return generate_pkl(pkl_cache_fname, load_data)
+    return generate_pkl_cached(pkl_cache_fname, load_data)
 
 
 def create_category_table():

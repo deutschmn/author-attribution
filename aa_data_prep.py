@@ -18,7 +18,7 @@ def compute_date_stats(posts):
     date_stats = pd.DataFrame()
     date_stats["ID_Post"] = posts["ID_Post"]
 
-    date_stats["TimeOfDay"] = posts["CreatedAt"].apply(lambda x: x.hour + x.minute / 60)
+    date_stats["TimeOfDay"] = posts["CreatedAt"].apply(lambda x: int(x.hour * 100 + x.minute))  # encode as hhmm
     date_stats["Timestamp"] = posts["CreatedAt"].apply(lambda x: x.value)
     date_stats["DayOfWeek"] = posts["CreatedAt"].apply(lambda x: x.dayofweek)
 
@@ -123,7 +123,7 @@ def embed_posts(posts, post_embeddings, max_words):
 
 
 def encode_article_named_entities(posts):
-    entities = dbase_helper.generate_pkl("prepared_ner_articles.pkl", ner.generate_article_ner_frame)
+    entities = dbase_helper.generate_pkl_cached("prepared_ner_articles.pkl", ner.generate_article_ner_frame)
 
     # Select named entities with minimal occurrence
     minimal_number_word_occurrences = 20
@@ -164,7 +164,7 @@ def compute_stylometric_features(posts):
     style = pd.DataFrame(posts["ID_Post"])
 
     # ratios - TODO also title?
-    def ratio(x, **kwargs): return len(re.findall(kwargs["regex"], x)) / len(x)
+    def ratio(x, **kwargs): return int(round((len(re.findall(kwargs["regex"], x)) / len(x)) * 100))
     style["alpha-chars-ratio"] = posts["p.Body"].apply(ratio, regex="[a-zA-ZäöüßÄÖÜ]")
     style["digit-chars-ratio"] = posts["p.Body"].apply(ratio, regex="\\d")
     style["upper-chars-ratio"] = posts["p.Body"].apply(ratio, regex="[A-ZÄÖÜ]")
@@ -177,11 +177,11 @@ def compute_stylometric_features(posts):
     toktok = nltk.tokenize.ToktokTokenizer()
 
     style["average-word-length"] = \
-        posts["p.Body"].apply(lambda x: np.average(list(map(len, toktok.tokenize(x)))))
+        posts["p.Body"].apply(lambda x: int(round(np.average(list(map(len, toktok.tokenize(x)))))))
     style["average-sentence-char-length"] = \
-        posts["p.Body"].apply(lambda x: np.average(list(map(len, nltk.sent_tokenize(x)))))
+        posts["p.Body"].apply(lambda x: int(round(np.average(list(map(len, nltk.sent_tokenize(x)))))))
     style["average-sentence-word-length"] = \
-        posts["p.Body"].apply(lambda x: np.average(list(map(len, map(toktok.tokenize, nltk.sent_tokenize(x))))))
+        posts["p.Body"].apply(lambda x: int(round(np.average(list(map(len, map(toktok.tokenize, nltk.sent_tokenize(x))))))))
 
     return style.drop("ID_Post", axis=1)
 
@@ -190,8 +190,10 @@ def prepare_data():
     posts = load_raw_posts()
 
     post_embeddings = load_or_create_post_embeddings(posts)
+
     data = {
-        "stylometric": compute_stylometric_features(posts),
+        "stylometric": dbase_helper.generate_pkl_cached("stylometric_features.pkl",
+                                                        compute_stylometric_features, posts=posts),
         "embedded_posts": load_or_embed_posts(posts, post_embeddings),
         "date_stats": compute_date_stats(posts),
         "article_stats": compute_article_category_stats(posts),

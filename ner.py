@@ -14,7 +14,7 @@ import data_analysis
 
 
 def ner_article_plots():
-    entities = dbase_helper.generate_pkl("prepared_ner_articles.pkl", generate_article_ner_frame)
+    entities = dbase_helper.generate_pkl_cached("prepared_ner_articles.pkl", generate_article_ner_frame)
     pandas.DataFrame(entities['Text'].value_counts().head(30)).plot.bar()
     plt_helper.save_and_show_plot("Entity Distribution")
 
@@ -123,7 +123,7 @@ def generate_article_ner_frame():
 
 
 def create_co_occurrence_all():
-    entities = dbase_helper.generate_pkl("prepared_ner_articles.pkl", generate_article_ner_frame)
+    entities = dbase_helper.generate_pkl_cached("prepared_ner_articles.pkl", generate_article_ner_frame)
     num_top_entities = 50
     pandas.DataFrame(entities['Text'].value_counts().head(num_top_entities)).plot.bar()
     plt.title("Distribution of top " + str(num_top_entities) + " named entities over all "
@@ -147,7 +147,7 @@ def create_co_occurrence_all():
 
 
 def create_co_occurrence_matrix(interesting_words: [str], filename: str = None):
-    entities = dbase_helper.generate_pkl("prepared_ner_articles.pkl", generate_article_ner_frame)
+    entities = dbase_helper.generate_pkl_cached("prepared_ner_articles.pkl", generate_article_ner_frame)
     data = entities[entities['Text'].isin(interesting_words)].groupby(by='ID_Article', as_index=False).agg(
         lambda x: ' '.join(list(x)))[['ID_Article', 'Text']]
     interesting_articles = np.array(data['ID_Article'])

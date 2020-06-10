@@ -35,8 +35,8 @@ class AuthorClassifier(HyperModel):
             rnn_input = tf.keras.Input(shape=(None, self.num_rnn_inputs_dimension))
             inputs.append(rnn_input)
 
-            masked = tf.keras.layers.Masking()(rnn_input)
-            rnn = rnn_type(rnn_dimension, return_sequences=(len(hidden_layer) > 0))(masked)
+            masked = tf.keras.layers.Masking(name="initial_masking_layer")(rnn_input)
+            rnn = rnn_type(rnn_dimension, return_sequences=(len(hidden_layer) > 0), name="rnn_embedding_layer")(masked)
 
             dropout = hp.Fixed('dropout', 0.3)  # hp.Choice('dropout', values=[0.15, 0.3])
 
@@ -45,7 +45,7 @@ class AuthorClassifier(HyperModel):
 
             for (i, hidden_neurons) in enumerate(hidden_layer):
                 is_last_rnn_layer = i == len(hidden_layer) - 1
-                rnn = rnn_type(hidden_neurons, return_sequences=not is_last_rnn_layer)(rnn)
+                rnn = rnn_type(hidden_neurons, return_sequences=not is_last_rnn_layer, name="rnn_layer_" + str(i))(rnn)
 
                 if dropout > 0:
                     rnn = tf.keras.layers.Dropout(dropout)(rnn)
@@ -61,16 +61,20 @@ class AuthorClassifier(HyperModel):
                 hp.Int('num_after_dense_input_layers', min_value=0, max_value=3, step=1)
             num_after_dense_input_layer_neurons = \
                 hp.Int('num_after_dense_input_layer_neurons', min_value=30, max_value=200, step=30)
+            dense_dropout = hp.Choice('dense_dropout', [0.0, 0.15, 0.3])
 
             dense_output = dense_input
             for i in range(num_after_dense_input_layers):
-                dense_output = tf.keras.layers.Dense(num_after_dense_input_layer_neurons)(dense_output)
+                dense_output = tf.keras.layers.Dense(num_after_dense_input_layer_neurons, activation='relu',
+                                                     name="dense_inputs_hidden_layer_" + str(i))(dense_output)
+                if dense_dropout != 0 and i != (num_after_dense_input_layers - 1):
+                    dense_output = tf.keras.layers.Dropout(dense_dropout)(dense_output)
 
             concats.append(dense_output)
 
         # output and model creation
         if len(concats) > 1:
-            concat = tf.keras.layers.concatenate(concats, axis=1)
+            concat = tf.keras.layers.concatenate(concats, axis=1, name="concatenation_layer")
         else:
             concat = concats[0]
 
@@ -78,9 +82,10 @@ class AuthorClassifier(HyperModel):
         final_dense_neurons = hp.Choice('neurons_final_dense_layers', values=[128, 256, 512])
         num_final_dense_layers = hp.Fixed("num_final_dense_layers", 1)  # hp.Int('num_final_dense_layers', min_value=0, max_value=3, step=1)
         for i in range(num_final_dense_layers):
-            final_dense = tf.keras.layers.Dense(final_dense_neurons, activation='relu')(final_dense)
+            final_dense = tf.keras.layers.Dense(final_dense_neurons, activation='relu',
+                                                name="concatinated_dense_layer_" + str(i))(final_dense)
 
-        output = tf.keras.layers.Dense(self.num_users, activation='softmax')(final_dense)
+        output = tf.keras.layers.Dense(self.num_users, activation='softmax', name="final_dense_layer")(final_dense)
 
         model = tf.keras.Model(inputs=inputs,
                                outputs=[output])

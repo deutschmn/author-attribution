@@ -2,12 +2,13 @@ from aa_data_prep import prepare_data
 from aa_classifier import AuthorClassifier
 import numpy as np
 import kerastuner as kt
+import tensorflow as tf
 import datetime
 import json
 import pathlib
 
 
-def log_run_inputs(num_users, num_dense_inputs, num_rnn_inputs, num_rnn_inputs_dimension, num_train_samples):
+def log_run_inputs(rnn_inputs, dense_inputs, num_users, num_dense_inputs, num_rnn_inputs, num_rnn_inputs_dimension, num_train_samples):
     input_info = {
         "rnn_inputs": list(rnn_inputs.keys()),
         "dense_inputs": list(dense_inputs.keys()),
@@ -55,6 +56,8 @@ def hyper_parameter_search(rnn_inputs, dense_inputs, targets: np.array,
         dense_network_inputs = np.zeros((num_train_samples, 0))
     else:
         dense_network_inputs = np.hstack(dense_inputs.values())
+        if np.all(dense_network_inputs.astype('uint16') == dense_network_inputs):
+            dense_network_inputs = dense_network_inputs.astype('uint16')
         inputs.append(dense_network_inputs)
 
     assert targets.shape[0] == dense_network_inputs.shape[0] == rnn_network_inputs.shape[0], \
@@ -67,19 +70,30 @@ def hyper_parameter_search(rnn_inputs, dense_inputs, targets: np.array,
     num_rnn_inputs = rnn_network_inputs.shape[1]
     num_rnn_inputs_dimension = rnn_network_inputs.shape[2]
 
-    log_run_inputs(num_users, num_dense_inputs, num_rnn_inputs, num_rnn_inputs_dimension, num_train_samples)
+    log_run_inputs(rnn_inputs, dense_inputs,
+                   num_users, num_dense_inputs, num_rnn_inputs, num_rnn_inputs_dimension, num_train_samples)
 
     classifier = AuthorClassifier(num_users, num_dense_inputs, num_rnn_inputs,
                                   num_rnn_inputs_dimension, num_train_samples, search_title)
 
+    tensorboard_log_dir = "tensorboard_logs/" + search_title
     tuner = kt.Hyperband(classifier,
                          objective='val_accuracy',
                          max_epochs=15,
                          factor=3,
-                         directory='hyperparams',
-                         project_name=search_title)
+                         directory='tensorboard_logs')
 
-    tuner.search(inputs, targets, validation_split=validation_split)
+    stop_callback = tf.keras.callbacks.EarlyStopping(
+        monitor='val_accuracy', patience=3)
+
+    hist_callback = tf.keras.callbacks.TensorBoard(
+        log_dir=tensorboard_log_dir,
+        histogram_freq=1,
+        embeddings_freq=1,
+        write_graph=True)
+
+    tuner.search(inputs, targets, validation_split=validation_split, callbacks=[hist_callback,
+                                                                                stop_callback])
 
     print("Hyper-parameters search '" + search_title + "' completed. Top results:")
     tuner.results_summary(5)

@@ -10,7 +10,7 @@ import plt_helper
 
 
 def prepare_data():
-    entities = dbase_helper.generate_pkl("prepared_ner_articles.pkl", ner.generate_article_ner_frame)
+    entities = dbase_helper.generate_pkl_cached("prepared_ner_articles.pkl", ner.generate_article_ner_frame)
 
     # Select named entities with minimal occurrence
     minimal_number_word_occurrences = 5
