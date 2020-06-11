@@ -1,3 +1,5 @@
+from enum import Enum
+
 from aa_data_prep import prepare_data
 from aa_classifier import AuthorClassifier
 import numpy as np
@@ -73,12 +75,12 @@ def hyper_parameter_search(rnn_inputs, dense_inputs, targets: np.array,
     num_rnn_inputs_dimension = rnn_network_inputs.shape[2]
 
     log_run_inputs(rnn_inputs, dense_inputs,
-                   num_users, num_dense_inputs, num_rnn_inputs, num_rnn_inputs_dimension, num_train_samples, search_title)
+                   num_users, num_dense_inputs, num_rnn_inputs, num_rnn_inputs_dimension, num_train_samples,
+                   search_title)
 
     classifier = AuthorClassifier(num_users, num_dense_inputs, num_rnn_inputs,
                                   num_rnn_inputs_dimension, num_train_samples, search_title, model_name)
 
-    tensorboard_log_dir = "tensorboard_logs/" + search_title
     tuner = kt.Hyperband(classifier,
                          objective='val_accuracy',
                          max_epochs=15,
@@ -89,10 +91,12 @@ def hyper_parameter_search(rnn_inputs, dense_inputs, targets: np.array,
     stop_callback = tf.keras.callbacks.EarlyStopping(
         monitor='val_accuracy', patience=3)
 
+    tensorboard_log_dir = "tensorboard_logs/" + search_title
     hist_callback = tf.keras.callbacks.TensorBoard(
         log_dir=tensorboard_log_dir,
         histogram_freq=1,
-        embeddings_freq=1,
+        write_images=True,
+        # embeddings_freq=1,
         write_graph=True)
 
     tuner.search(inputs, targets, validation_split=validation_split, callbacks=[hist_callback,
@@ -100,29 +104,70 @@ def hyper_parameter_search(rnn_inputs, dense_inputs, targets: np.array,
 
     print("Hyper-parameters search '" + search_title + "' completed. Top results:")
     tuner.results_summary(5)
-
     return tuner
 
 
-if __name__ == '__main__':
+class Configuration(Enum):
+    ALL_FEATURES = "all_features"
+    POST_CONTENT_FEATURES = "post_content_features"
+    METADATA_FEATURES = "metadata_features"
+    DENSE_FEATURES = "dense_features"
+
+
+def load_inputs_for_configuration(config: Configuration):
     posts, data = prepare_data()
+    if config == Configuration.ALL_FEATURES:
+        rnn_in = {
+            "embedded_posts": data["embedded_posts"]
+        }
+        dense_in = {
+            "date_stats": data["date_stats"],
+            "article_stats": data["article_stats"],
+            "article_entities": data["article_entities"],
+            "post_ratings": data["post_ratings"],
+            "parent_posts": data["parent_posts"],
+            "stylometric_features": data["stylometric"]
+        }
+    elif config == Configuration.POST_CONTENT_FEATURES:
+        rnn_in = {
+            "embedded_posts": data["embedded_posts"]
+        }
+        dense_in = {
+            "post_ratings": data["post_ratings"],
+            "parent_posts": data["parent_posts"],
+            "stylometric_features": data["stylometric"]
+        }
+    elif config == Configuration.METADATA_FEATURES:
+        rnn_in = {
+        }
+        dense_in = {
+            "date_stats": data["date_stats"],
+            "article_stats": data["article_stats"],
+            "article_entities": data["article_entities"],
+            "post_ratings": data["post_ratings"],
+            "parent_posts": data["parent_posts"],
+        }
+    elif config == Configuration.DENSE_FEATURES:
+        rnn_in = {
+        }
+        dense_in = {
+            "date_stats": data["date_stats"],
+            "article_stats": data["article_stats"],
+            "article_entities": data["article_entities"],
+            "post_ratings": data["post_ratings"],
+            "parent_posts": data["parent_posts"],
+            "stylometric_features": data["stylometric"]
+        }
+    else:
+        raise Exception("Invalid Configuration")
 
-    rnn_inputs = {
-        "embedded_posts": data["embedded_posts"]
-    }
+    return data["targets"], rnn_in, dense_in
 
-    dense_inputs = {
-        "date_stats": data["date_stats"],
-        "article_stats": data["article_stats"],
-        "article_entities": data["article_entities"],
-        "post_ratings": data["post_ratings"],
-        "parent_posts": data["parent_posts"],
-        "stylometric_features": data["stylometric"]
-    }
 
-    search_title = 'add_style'
-    model_name = "AuthorAttributionModel"
-
-    hyper_parameter_search(rnn_inputs, dense_inputs, data["targets"], search_title=search_title, model_name=model_name)
-
+if __name__ == '__main__':
+    configuration_type = Configuration.ALL_FEATURES
+    targets, rnn_inputs, dense_inputs = load_inputs_for_configuration(configuration_type)
+    model_name = "AuthorAttributionModel_" + str(configuration_type.value)
+    search_title = "01_" + str(configuration_type.value)
+    hyper_parameter_search(rnn_inputs, dense_inputs, targets, search_title=search_title, model_name=model_name)
     print("done")

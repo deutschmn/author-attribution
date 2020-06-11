@@ -59,10 +59,10 @@ class AuthorClassifier(HyperModel):
             inputs.append(dense_input)
 
             num_after_dense_input_layers = \
-                hp.Int('num_after_dense_input_layers', min_value=0, max_value=3, step=1)
+                hp.Int('num_after_dense_input_layers', min_value=0, max_value=2, step=1)
             num_after_dense_input_layer_neurons = \
                 hp.Int('num_after_dense_input_layer_neurons', min_value=30, max_value=200, step=30)
-            dense_dropout = hp.Choice('dense_dropout', [0.0, 0.15, 0.3])
+            dense_dropout = hp.Choice('dense_dropout', [0.3, 0.5, 0.8])
 
             dense_output = dense_input
             for i in range(num_after_dense_input_layers):
