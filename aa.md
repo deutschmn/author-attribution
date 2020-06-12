@@ -1,10 +1,11 @@
-# Author Attribution
+# Author Attribution – DerStandard Forum Writing Style
 
 a.k.a. *authorship attribution* or *author identification*.
 
-## Problem Setting
+## Problem Setting (Patrick)
+- *consider formal notation* (maybe see other author identification papers?)
 
-## Related Work
+## Related Work (Patrick)
 ### Papers
 - https://web.stanford.edu/class/archive/cs/cs224n/cs224n.1174/reports/2760185.pdf
 - https://www.aclweb.org/anthology/C18-1029.pdf
@@ -16,9 +17,14 @@ a.k.a. *authorship attribution* or *author identification*.
 - https://machinelearningmastery.com/sequence-classification-lstm-recurrent-neural-networks-python-keras/
 - https://www.kaggle.com/christopher22/stylometry-identify-authors-by-sentence-structure
 
-## Features
+## Setup (Patrick)
+- two different "branches" of the network
+- Keras
+- etc.
 
-### Post Specific (Lukas)
+## Features (Lukas)
+
+### Post Specific 
 
 * CreatedAt time
 * Number of Pos/Neg votes 
@@ -29,17 +35,22 @@ a.k.a. *authorship attribution* or *author identification*.
   * parent votes pos/neg (maybe root post)
 * Named Entities from Articles/Posts (Lukas)
 
-### Stylometric (Patrick)
+### Stylometric
 
 <img src="assets/image-20200606082356512.png" alt="image-20200606082356512" style="zoom:67%;" />
 
 * Same features for title
 * Total length of post/title
 
-## Techniques
+## Evaluation (Lukas)
 
-## Evaluation
+### Baseline
 
 ### Results
 
 ### Interpretation
+
+## Discussion
+- *The discussion section should provide the key insights and the context (i.e., not only list what worked (or not), but also provide possible reasons why it worked (or not), or when it should work)*
+
+## Conclusion
