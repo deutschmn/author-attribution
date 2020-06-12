@@ -6,9 +6,10 @@ pkl_cache/
 # For now don't commit plots
 plots/
 
+# Log files
 checkpoints/
 .ipynb_checkpoints
-
+tensorboard_logs/
 
 ### LaTeX ###
 ## Core latex/pdflatex auxiliary files:
