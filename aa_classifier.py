@@ -1,5 +1,6 @@
 import tensorflow as tf
 from kerastuner import HyperModel
+import kerastuner as kt
 
 
 class AuthorClassifier(HyperModel):
@@ -12,6 +13,11 @@ class AuthorClassifier(HyperModel):
         self.num_dense_inputs = num_dense_inputs
         self.search_title = search_title
         self.model_name = model_name
+
+    def get_tunable_hyper_parameters(self) -> kt.HyperParameters:
+        hp = kt.HyperParameters()
+        self.build(hp)
+        return hp
 
     def build(self, hp):
         rnn_types = {
