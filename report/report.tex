@@ -162,7 +162,7 @@ Articles in the dataset also contain a path which we used as a categorical featu
 
 \subsubsection{Article Named Entities}
 To get a more detailed view of the interests of users additionally to the Article Categories, we also analysed Named Entities in the articles under which the posts where written. Similarly to the Article Categories, the notion behind this was, that individual users will be more interested in certain entities and hence are more likely to write a post under Articles containing these Entities. \\
-For this we utilized the library Flair (\url{https://github.com/flairNLP/flair}) a library that offers state-of-the-art Named Entity Recognition for German language. Histograms for the recognized entities are depicted in Figure~\ref{fig:named_entities}.
+For this we utilized the library Flair (\url{https://github.com/flairNLP/flair}) a library that offers state-of-the-art Named Entity Recognition for German language. Histograms for the recognized entities are depicted in Figure~\ref{fig:named_entities}. We only used entities that occurred at least 20 times. 
 
 \begin{figure*}[h!]
         \centering
@@ -214,13 +214,76 @@ We used embedding vectors of size 50 only computed the embedding for words which
 When embedding the posts, we only embedded at most 100 words for each post to restrict the size of the feature.  
 
 \section{Evaluation}
-%TODO @Lukas
+In this section we describe our results. For the final training of the network we splitted into a test and training set (80/20). 
+Additionally we used a validation data set for early stopping (20%) of the training test. 
 
 \subsection{Baseline}
+%TODO find more baseline data
+As one base line we use random guessing. In our dataset we have 192 Users, hence a random guess yields an accuracy of $1/192 = 0.0052$. 
 
 \subsection{Results}
+In this section we list the achieved results for various feature configuration.
+We first trained models for each individual feature the corresponding results are listed in Table~\ref{tab:result_features}. 
+Next we trained individual configurations, the results are depicted in Table~\ref{tab:result_configurations}.
 
-\subsection{Interpretation}
+\subsubsection{Individual Features}
+To get an idea of the usefulness of individual features we trained the network for each individual feature. 
+
+For all features below we trained a simple network using an input layer, one or two hidden layers and one output layer. 
+The results for each feature and the corresponding parameters are listed in Table~\ref{tab:result_features}.
+
+\begin{table}[H]
+\begin{tabular}{lllllll}
+Feature & Val. Acc. & Test Acc. & Layers & Dropout & Learning Rate & Epochs\\ \hline
+Date Stats & 0.041 & 0.047 & (256) & 0.5 & 0.2 & 20 \\
+Post Ratings & 0.042 & 0.044 & (512) & 0.5 & 0.2 & 4 \\
+Parent Post & 0.041 & 0.039 & (256) & 0.5 & 0.2 & 7 \\
+Article Categories & 0.090 & 0.087 & (190) & 0.5 & 0.1 & 8 \\
+Article Entities & 0.26 & 0.26 &  (700)  & 0.5 & 0.2 & 6 \\
+Styleometric & 0.21 & 0.21 & (150),(512) & 0.3 & 0.1 & 18 
+%TODO embeddings
+\end{tabular}
+\caption{Results for individual features}
+\label{tab:result_features}
+\end{table}
+
+
+\subsubsection{Metadata Features}
+The notion behind this model was to use all available features that are not related to the content of the post. \\
+Therefore the following features are used:
+\begin{itemize}
+\item Date Statistics
+\item Post Ratings
+\item Parent Posts
+\item Article Categories
+\item Article Named Entities
+\end{itemize}
+
+\subsubsection{Post Content Features}
+This model contains all features which are directly related to the content of the post. 
+Therefore the following features are used:
+\begin{itemize}
+\item Post Embeddings
+\item Styleometrics
+\end{itemize}
+%TODO @lukas add results
+
+\subsubsection{Dense Features}
+This model contains all features except for the embeddings. Since we added recurrent layers for the post embeddings this is the configuration with all features such that the model is still a feed forward network. 
+
+\subsubsection{Complete Model}
+%TODO @lukas description + result
+
+
+\begin{table}[H]
+\begin{tabular}{lllllll}
+Configuration & Val. Acc. & Test Acc. & Layers & Dropout & Learning Rate & Epochs\\ \hline
+Metadata Features & 0.28 & 0.27 & (512) &  0.5 & 0.2 & 18 \\
+Dense Features & 0.36 & 0.35 & (90),(512) & 0.3 & 0.2 & 12 \\
+\end{tabular}
+\caption{Results for Configurations}
+\label{tab:result_configurations}
+\end{table}
 
 
 \section{Discussion}
