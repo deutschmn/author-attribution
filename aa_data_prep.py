@@ -10,11 +10,12 @@ import re
 import dbase_helper
 import embeddings.word2vec as word2vec
 import ner
-
+import plt_helper
+import matplotlib.pyplot as plt
 DEBUG = False
 
 
-def compute_date_stats(posts):
+def compute_date_stats(posts, plot=False):
     date_stats = pd.DataFrame()
     date_stats["ID_Post"] = posts["ID_Post"]
 
@@ -24,6 +25,16 @@ def compute_date_stats(posts):
 
     date_inputs = np.asarray(date_stats.drop("ID_Post", axis=1).drop("Timestamp", axis=1))
 
+    if plot:
+        date_stats.DayOfWeek.hist(bins=6)
+        plt.ylabel("Number of Posts")
+        plt.xlabel("Day of the Week")
+        plt_helper.save_and_show_plot("Number of posts per Weekday")
+
+        posts["CreatedAt"].apply(lambda x: x.hour).hist(bins=24)
+        plt.ylabel("Number of Posts")
+        plt.xlabel("Time of the Day")
+        plt_helper.save_and_show_plot("Number of Posts per Time of Day")
     return date_inputs
 
 
@@ -138,16 +149,26 @@ def encode_article_named_entities(posts):
     return posts_entity_occurrences_in_article.drop("ID_Post", axis=1)
 
 
-def load_post_ratings(posts):
+def load_post_ratings(posts, plot=False):
     post_ratings = dbase_helper.query_to_data_frame("""
             SELECT Posts.ID_Post, Posts.PositiveVotes, Posts.NegativeVotes FROM Posts;
             """, "post_votes.pkl")
     post_ratings.columns = ["ID_Post", "PositiveVotes", "NegativeVotes"]
+    if plot:
+        plt.hist(post_ratings.PositiveVotes, label="PositiveVotes")
+        plt.hist(-post_ratings.NegativeVotes, label="NegativeVotes")
+        plt.legend()
+        plt.ylabel("Number of Occurrences")
+        plt.xlabel("Number of Votes")
+        ax = plt.gca()
+        ax.set_yscale('log')
+        plt_helper.save_and_show_plot("Logarithmic Vote Distribution over Posts")
+
     post_ratings[["PositiveVotes", "NegativeVotes"]] = post_ratings[["PositiveVotes", "NegativeVotes"]].astype('uint16')
     return post_ratings[post_ratings.ID_Post.isin(posts.ID_Post)].drop("ID_Post", axis=1)
 
 
-def load_parent_posts(posts):
+def load_parent_posts(posts, plot=False):
     parent_posts = dbase_helper.query_to_data_frame("""
                 SELECT Posts.ID_Post, Posts.ID_Parent_Post FROM Posts;
                 """, "post_parents.pkl")
@@ -155,6 +176,13 @@ def load_parent_posts(posts):
 
     # For now just encode if there exists a parent post
     parent_posts["Parent_Post"] = parent_posts.ID_Parent_Post >= 0
+
+    if plot:
+        parent_posts["Parent_Post"].value_counts().plot.bar()
+        plt.ylabel("Number of Posts")
+        plt.xlabel("Has Parent-Post")
+        plt_helper.save_and_show_plot("Posts with Parent-Post")
+
     return parent_posts[["ID_Post", "Parent_Post"]][parent_posts.ID_Post.isin(posts.ID_Post)].drop("ID_Post", axis=1)
 
 

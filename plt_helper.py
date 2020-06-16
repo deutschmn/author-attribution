@@ -14,6 +14,7 @@ def plot_histogram_distinct(title: str, data: np.ndarray, sorted=True):
         series = pandas.Series(data).value_counts()
     else:
         series = pandas.Series(data).value_counts().sort_index()
+    plt.ylabel("Number of Elements")
     series.plot(kind='bar')
     save_and_show_plot(title)
 

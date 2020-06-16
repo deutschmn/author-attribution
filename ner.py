@@ -16,6 +16,7 @@ def ner_article_plots():
     plt_helper.save_and_show_plot("Entity Distribution")
 
     entities["Label"].value_counts().plot.bar()
+    plt.xlabel("Number of Occurrences")
     plt_helper.save_and_show_plot("Entity Label Distribution")
 
     joined_article_categories = data_analysis.generate_joined_category_articles_frame()
@@ -24,7 +25,7 @@ def ner_article_plots():
     for label in set(entities["Label"]):
         print("Doing plots for: " + label)
         label_entities = entities[entities['Label'] == label]
-        label_series = label_entities["Text"].value_counts().head(30)
+        label_series = label_entities["Text"].value_counts().head(20)
 
         if label == "PER":
             print("For top person entries try to unify first+last name and first-name/last-name only entries")
@@ -38,6 +39,9 @@ def ner_article_plots():
                         break
 
         pandas.DataFrame(label_series.sort_values()).plot.barh()
+        ax = plt.gca()
+        ax.get_legend().remove()
+        plt.xlabel("Number of Occurrences")
         plt_helper.save_and_show_plot("Entities - " + label + " Distribution")
         top_entities = label_series.sort_values(ascending=False).head(6).index.values
 
