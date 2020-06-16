@@ -163,8 +163,6 @@ def load_inputs_for_configuration(config: Configuration):
             "embedded_posts": data["embedded_posts"]
         }
         dense_in = {
-            "post_ratings": data["post_ratings"],
-            "parent_posts": data["parent_posts"],
             "stylometric_features": data["stylometric"]
         }
     elif config == Configuration.METADATA_FEATURES:
@@ -288,7 +286,7 @@ if __name__ == '__main__':
     # Run final training with best hyper-parameters on a fresh model and with Test/Train split
     parameters = tuner.get_best_hyperparameters()[0]
     model = tuner.hypermodel.build(parameters)
-    final_training(model, rnn_inputs, dense_inputs, targets, parameters,
+    final_training(model, rnn_inputs, dense_inputs, targets, parameters.values,
                    max_epochs=50,
                    search_title=search_title, model_name=model_name)
     print("done")

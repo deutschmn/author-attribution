@@ -9,6 +9,7 @@ plots/
 # Log files
 checkpoints/
 .ipynb_checkpoints
+hyperparams/
 tensorboard_logs/
 
 ### LaTeX ###
