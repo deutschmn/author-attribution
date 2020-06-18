@@ -48,7 +48,7 @@
 %%
 %% The "title" command has an optional parameter,
 %% allowing the author to define a "short title" to be used in page headers.
-\title{Author Attribution – DerStandard Forum Writing Style}
+\title{Author Attribution: DerStandard Forum Writing Style}
 
 %%
 %% The "author" command and its associated commands are used to define
@@ -97,15 +97,26 @@
 \maketitle
 
 \section{Problem Setting}
-%TODO @Patrick
 
+The aim of this project is to identify the authors of posts to a newspaper forum. This should be achieved through the incorporation of multiple factors, such as writing style and content, but also meta information such as the post date and the article to which the post was written. In that, the setting differentiates itself from the classical authorship attribution setting, where no meta information is used. 
+
+The dataset we used for this project was the One Million Posts Corpus, provided by \cite{MillionPosts}. It contains user comments in German language posted for the Austrian newspaper DerStandard\footnote{\url{https://www.derstandard.at}}.
+
+The concrete problem was formulated such that given a new post and its meta information, the most likely author of all forum users should be predicted. For that we only considered the most active users with at least 500 posts. There were in total 212 user for which this was the case in our data set.
 
 \section{Related Work}
-%TODO @Patrick
 
+Authorship attribution is an actively researched field with many different special areas to focus on. While more traditional, manual methods such as described in \cite{criminalForensics} largely focus on linguistic expert analysis, more modern approaches make use of computers to solve the problem.
+
+Much research effort, such as in \cite{rexha2015towards,sanderson2006short}, is focused on author attribution of far longer texts than the short ones given in our comments section. However, in \cite{smith2009authorship,macleod2012whose} there is some analysis of short texts with methods that are also applicable to our use case. 
+
+This project differentiates itself from the aforementioned papers as it not only considers the writing style to determine the author, but also incorporates the meaning of the written text and some additional meta information, rendering it a significantly easier task.
 
 \section{Setup}
 %TODO @Patrick
+
+% This project explores different methods of identifying the authors of these posts...
+% - focused on MLP because it makes sense for this task (left other architectures for future work)
 
 
 \section{Features}
@@ -187,7 +198,7 @@ For this we utilized the library Flair (\url{https://github.com/flairNLP/flair})
 \end{figure*}
 
 
-\subsection{Styleometric}
+\subsection{Stylometric}
 Next, we looked at the content of the posts and computed various stylometric features. These features are based on the writing style of the user. The list and description of these features can be found in Table~\ref{tab:stylometric}. We computed all of those features twice. Once for the headline of the post and once for the actual text. The notion behind this is, that we noticed, that the way in which the headline was used differed significantly between users. While some users choose to leave the field empty, some showed a clear tendency towards upper-case characters, and some wrote the headline as the start for the main text and concluded it with "...". 
 
 \begin{table}[H]
@@ -214,8 +225,7 @@ We used embedding vectors of size 50 only computed the embedding for words which
 When embedding the posts, we only embedded at most 100 words for each post to restrict the size of the feature.  
 
 \section{Evaluation}
-In this section we describe our results. For the final training of the network we splitted into a test and training set (80/20). 
-Additionally we used a validation data set for early stopping (20\%) of the training test. 
+In this section we describe our results. For the final training of the network we split into a test and training set (80\%/20\%). Additionally we used a validation data set for early stopping (20\%) of the training test. 
 
 \subsection{Baseline}
 %TODO find more baseline data
@@ -240,7 +250,7 @@ Post Ratings & 0.042 & 0.044 & (512) & - & 0.2 & 4 \\
 Parent Post & 0.041 & 0.039 & (256) & - & 0.2 & 7 \\
 Article Categories & 0.090 & 0.087 & (190) & - & 0.1 & 8 \\
 Article Entities & 0.26 & 0.26 &  (700)  & - & 0.2 & 6 \\
-Styleometric & 0.21 & 0.21 & (150),(512) & - & 0.1 & 18 
+Stylometric & 0.21 & 0.21 & (150),(512) & - & 0.1 & 18 
 \end{tabular}
 \caption{Results for individual features}
 \label{tab:result_features}
@@ -269,7 +279,7 @@ This model contains all features which are directly related to the content of th
 Therefore the following features are used:
 \begin{itemize}
 \item Post Embeddings
-\item Styleometrics
+\item Stylometrics
 \end{itemize}
 
 
@@ -314,12 +324,17 @@ All Features & 0.45 & 0.44 & Fig.~\ref{fig:complete_model} & 0.3 & 0.2 & 11 \\
 \section{Conclusion}
 %TODO
 
+% TODO write about future work:
+% - try architectures other than Neural Network (MLP)
+% - comparison with other methods
+
+\pagebreak
 
 %%
 %% The next two lines define the bibliography style to be used, and
 %% the bibliography file.
 \bibliographystyle{ACM-Reference-Format}
-\bibliography{sample-base}
+\bibliography{references}
 
 
 \end{document}
