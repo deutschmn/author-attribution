@@ -151,7 +151,7 @@ For further information about a post without the actual content we looked at the
 \end{figure}
 
 \subsubsection{Article Categories}
-Articles in the dataset also contain a path which we used as a categorical feature with the idea, that individual users will be more interested in particular topics and therefore are more likely to write post under those articles. A histogram of the number of posts in each category of the most common main category "Newsroom" is depicted in Figure~\ref{fig:article_categories}.
+Articles in the dataset also contain a path which we used as a categorical feature with the idea, that individual users will be more interested in particular topics and therefore are more likely to write post under those articles. A histogram of the number of articles in each category of the most common main category "Newsroom" is depicted in Figure~\ref{fig:article_categories}.
 
 \begin{figure}[H]
 \includegraphics[width=.5\linewidth]{assets/Category_Distribution_Newsroom.png}
@@ -162,7 +162,7 @@ Articles in the dataset also contain a path which we used as a categorical featu
 
 \subsubsection{Article Named Entities}
 To get a more detailed view of the interests of users additionally to the Article Categories, we also analysed Named Entities in the articles under which the posts where written. Similarly to the Article Categories, the notion behind this was, that individual users will be more interested in certain entities and hence are more likely to write a post under Articles containing these Entities. \\
-For this we utilized the library Flair (\url{https://github.com/flairNLP/flair}) a library that offers state-of-the-art Named Entity Recognition for German language. Histograms for the recognized entities are depicted in Figure~\ref{fig:named_entities}. We only used entities that occurred at least 20 times. 
+For this we utilized the library Flair (\url{https://github.com/flairNLP/flair}) a library that offers state-of-the-art Named Entity Recognition for German language. Histograms for the most frequently recognized entities are depicted in Figure~\ref{fig:named_entities}. We only used entities that occurred at least 20 times. We count the occurrences of each entity and encode each article as a vector containing all entity counts. 
 
 \begin{figure*}[h!]
         \centering
@@ -224,7 +224,7 @@ As one base line we use random guessing. In our dataset we have 192 Users, hence
 \subsection{Results}
 In this section we list the achieved results for various feature configuration.
 We first trained models for each individual feature the corresponding results are listed in Table~\ref{tab:result_features}. 
-Next we trained individual configurations, the results are depicted in Table~\ref{tab:result_configurations}.
+Next we trained different configurations containing various combination of features, the results are depicted in Table~\ref{tab:result_configurations}.
 
 \subsubsection{Individual Features}
 To get an idea of the usefulness of individual features we trained the network for each individual feature. 
@@ -235,13 +235,12 @@ The results for each feature and the corresponding parameters are listed in Tabl
 \begin{table}[H]
 \begin{tabular}{lllllll}
 Feature & Val. Acc. & Test Acc. & Layers & Dropout & Learning Rate & Epochs\\ \hline
-Date Stats & 0.041 & 0.047 & (256) & 0.5 & 0.2 & 20 \\
-Post Ratings & 0.042 & 0.044 & (512) & 0.5 & 0.2 & 4 \\
-Parent Post & 0.041 & 0.039 & (256) & 0.5 & 0.2 & 7 \\
-Article Categories & 0.090 & 0.087 & (190) & 0.5 & 0.1 & 8 \\
-Article Entities & 0.26 & 0.26 &  (700)  & 0.5 & 0.2 & 6 \\
-Styleometric & 0.21 & 0.21 & (150),(512) & 0.3 & 0.1 & 18 
-%TODO embeddings
+Date Stats & 0.041 & 0.047 & (256) & - & 0.2 & 20 \\
+Post Ratings & 0.042 & 0.044 & (512) & - & 0.2 & 4 \\
+Parent Post & 0.041 & 0.039 & (256) & - & 0.2 & 7 \\
+Article Categories & 0.090 & 0.087 & (190) & - & 0.1 & 8 \\
+Article Entities & 0.26 & 0.26 &  (700)  & - & 0.2 & 6 \\
+Styleometric & 0.21 & 0.21 & (150),(512) & - & 0.1 & 18 
 \end{tabular}
 \caption{Results for individual features}
 \label{tab:result_features}
@@ -259,6 +258,10 @@ Therefore the following features are used:
 \item Article Named Entities
 \end{itemize}
 
+\subsubsection{Dense Features}
+This model contains all features except for the embeddings. Since we added recurrent layers for the post embeddings this is the configuration with all features such that the model is still a feed forward network. 
+
+
 \subsubsection{Post Content Features}
 This model contains all features which are directly related to the content of the post. 
 Therefore the following features are used:
@@ -266,24 +269,42 @@ Therefore the following features are used:
 \item Post Embeddings
 \item Styleometrics
 \end{itemize}
-%TODO @lukas add results
+Since this model utilized the Post Embeddings we added recurrent layers and a concatenation layer to merge them with the remaining features which are only used in a feed forward manner. The model is depicted in Figure~\ref{fig:post_content_model}.
 
-\subsubsection{Dense Features}
-This model contains all features except for the embeddings. Since we added recurrent layers for the post embeddings this is the configuration with all features such that the model is still a feed forward network. 
 
 \subsubsection{Complete Model}
-%TODO @lukas description + result
+For this model we combined all available features. We used a recurrent network for the post embeddings and combined it with a feed forward network of the other features. The model is depicted in Figure~\ref{fig:complete_model}.
 
 
 \begin{table}[H]
 \begin{tabular}{lllllll}
 Configuration & Val. Acc. & Test Acc. & Layers & Dropout & Learning Rate & Epochs\\ \hline
-Metadata Features & 0.28 & 0.27 & (512) &  0.5 & 0.2 & 18 \\
-Dense Features & 0.36 & 0.35 & (90),(512) & 0.3 & 0.2 & 12 \\
+Metadata Features & 0.28 & 0.27 & (512) &  - & 0.2 & 18 \\
+Dense Features & 0.36 & 0.35 & (90),(512) & - & 0.2 & 12 \\
+Post Content Features & 0.32 & 0.31 & Fig.~\ref{fig:post_content_model} & 0.3 & 0.2 & 8 \\
+All Features & 0.45 & 0.44 & Fig.~\ref{fig:complete_model} & 0.3 & 0.2 & 11 \\
 \end{tabular}
 \caption{Results for Configurations}
 \label{tab:result_configurations}
 \end{table}
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}{.5\textwidth}
+\centering
+  \includegraphics[width=.9\linewidth]{assets/AuthorAttributionModel_post_content_features.png}
+  \caption{Model for Post Content Features}
+  \label{fig:post_content_model}
+ \end{subfigure}%
+\begin{subfigure}{.5\textwidth}
+\centering
+  \includegraphics[width=.9\linewidth]{assets/AuthorAttributionModel_all_features.png}
+  \caption{Complete Model for all features}
+    \label{fig:complete_model}
+ \end{subfigure}
+ \caption{RNN Models}
+\label{fig:rnn_models}
+\end{figure}
 
 
 \section{Discussion}
