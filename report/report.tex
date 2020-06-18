@@ -215,7 +215,7 @@ When embedding the posts, we only embedded at most 100 words for each post to re
 
 \section{Evaluation}
 In this section we describe our results. For the final training of the network we splitted into a test and training set (80/20). 
-Additionally we used a validation data set for early stopping (20%) of the training test. 
+Additionally we used a validation data set for early stopping (20\%) of the training test. 
 
 \subsection{Baseline}
 %TODO find more baseline data
@@ -263,16 +263,17 @@ This model contains all features except for the embeddings. Since we added recur
 
 
 \subsubsection{Post Content Features}
-This model contains all features which are directly related to the content of the post. 
+Since this model utilized the Post Embeddings we added recurrent layers and a concatenation layer to merge them with the remaining features which are only used in a feed forward manner. 
+The model is depicted in Figure~\ref{fig:post_content_model}.
+This model contains all features which are directly related to the content of the post.
 Therefore the following features are used:
 \begin{itemize}
 \item Post Embeddings
 \item Styleometrics
 \end{itemize}
-Since this model utilized the Post Embeddings we added recurrent layers and a concatenation layer to merge them with the remaining features which are only used in a feed forward manner. The model is depicted in Figure~\ref{fig:post_content_model}.
 
 
-\subsubsection{Complete Model}
+\subsubsection{All Features}
 For this model we combined all available features. We used a recurrent network for the post embeddings and combined it with a feed forward network of the other features. The model is depicted in Figure~\ref{fig:complete_model}.
 
 
