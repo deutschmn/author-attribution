@@ -1,6 +1,7 @@
 \documentclass[acmsmall]{acmart}
 \usepackage{subcaption}
 \usepackage{float}
+\usepackage{tabularx}
 
 %%
 %% \BibTeX command to typeset BibTeX logo in the docs
@@ -113,21 +114,22 @@ Much research effort, such as in \cite{rexha2015towards,sanderson2006short}, is 
 This project differentiates itself from the aforementioned papers as it not only considers the writing style to determine the author, but also incorporates the meaning of the written text and some additional meta information, rendering it a significantly easier task.
 
 \section{Setup}
-%TODO @Patrick
 
-% This project explores different methods of identifying the authors of these posts...
-% - focused on MLP because it makes sense for this task (left other architectures for future work)
+This project explores different methods of identifying the authors of the forum posts. Due to the nature of the problem and the results obtained in previous work, we focused on investigating different structures of deep neural networks (multi-layer perceptrons). Other machine learning methods such as SVM or random forests are left for future work.
 
+We implemented the neural network in Keras\footnote{\url{https://keras.io}} and used different architectures depending on which input features were considered. The contents of the posts used word embeddings and were then fed into a recurrent neural network, for which we obtained the best results using \textit{gated recurrent units} (GRU, proposed in \cite{gru}). They were later merged with the other features using a concatenation layer and propagated into a deep dense structure. The final predictions used a softmax activation to determine the most likely author. To prevent overfitting, we used dropout layers as a means of regularisation.
+
+For training, we used Adam \cite{adam} as the optimiser and categorical cross-entropy loss, as we posed our problem as a multi-class classification. The network structures and features are explained in detail in the following section. 
 
 \section{Features}
-To best utilize our dataset we made use of various different features which are described in this section. 
+To best utilise our dataset, we made use of various different features which are described in this section. 
 
 \subsection{Post Metadata}
-The dataset contains a number of values we consider as meta-data, data that is not directly related to the actual text of the post and can be computed without considering the actual content of the post. 
+The dataset contains a number of values we consider as metadata, data that is not directly related to the actual text of the post and can be computed without considering the actual content of the post. 
 
 \subsubsection{Date Statistics}
 For this feature we analysed at which time of the day and on which day of the week users write their posts. 
-The notion behind this was, that individual users will tend to at similar times.
+The notion behind this was that individual users will tend to post at similar times.
 A histogram of this data is depicted in Figure~\ref{fig:date_stats}.
 
 \begin{figure}[H]
@@ -145,7 +147,7 @@ A histogram of this data is depicted in Figure~\ref{fig:date_stats}.
 \end{figure}
 
 \subsubsection{Post Ratings and Parent Posts}
-For further information about a post without the actual content we looked at the post ratings and whether the post was a comment to another users post. The aim with this feature was to identify users that post more controversial content as well as users that only ever post comments (have a parent post) and users that never answer to other users (no parent post). Again we depict a histogram over this data (Figure~\ref{fig:post_stats}). This figure clearly shows, that most posts get no votes at all, while there are a few posts which get a very large number of votes. 
+For further information about a post without the actual content we looked at the post ratings and whether the post was a comment to another user's post. The aim with this feature was to identify users that post more controversial content as well as users that only ever post comments (have a parent post) and users that never answer to other users (no parent post). Again we depict a histogram over this data (Figure~\ref{fig:post_stats}). This figure clearly shows that most posts get no votes at all, while there are a few posts which get a very large number of votes. 
 
 \begin{figure}[H]
 \centering
@@ -162,7 +164,7 @@ For further information about a post without the actual content we looked at the
 \end{figure}
 
 \subsubsection{Article Categories}
-Articles in the dataset also contain a path which we used as a categorical feature with the idea, that individual users will be more interested in particular topics and therefore are more likely to write post under those articles. A histogram of the number of articles in each category of the most common main category "Newsroom" is depicted in Figure~\ref{fig:article_categories}.
+For every given post, our data set contains the article it belongs to. Articles in the dataset also contain a path which we used as a categorical feature with the idea that individual users will be more interested in particular topics and therefore are more likely to write post under those articles. A histogram of the number of articles in each category of the most common main category "Newsroom" is depicted in Figure~\ref{fig:article_categories}.
 
 \begin{figure}[H]
 \includegraphics[width=.5\linewidth]{assets/Category_Distribution_Newsroom.png}
@@ -172,8 +174,8 @@ Articles in the dataset also contain a path which we used as a categorical featu
 
 
 \subsubsection{Article Named Entities}
-To get a more detailed view of the interests of users additionally to the Article Categories, we also analysed Named Entities in the articles under which the posts where written. Similarly to the Article Categories, the notion behind this was, that individual users will be more interested in certain entities and hence are more likely to write a post under Articles containing these Entities. \\
-For this we utilized the library Flair (\url{https://github.com/flairNLP/flair}) a library that offers state-of-the-art Named Entity Recognition for German language. Histograms for the most frequently recognized entities are depicted in Figure~\ref{fig:named_entities}. We only used entities that occurred at least 20 times. We count the occurrences of each entity and encode each article as a vector containing all entity counts. 
+To get a more detailed view of the interests of users additionally to the article categories, we also analysed named entities in the articles under which the posts were written. Similarly to the article categories, the notion behind this was that individual users will be more interested in certain entities and hence are more likely to write a post under articles containing these Entities. \\
+For this, we utilised the library Flair\footnote{\url{https://github.com/flairNLP/flair}}, a library that offers state-of-the-art Named Entity Recognition for the German language. Histograms for the most frequently recognised entities are depicted in Figure~\ref{fig:named_entities}. We only used entities that occurred at least 20 times. We count the occurrences of each entity and encode each article as a vector containing all entity counts. 
 
 \begin{figure*}[h!]
         \centering
@@ -199,10 +201,10 @@ For this we utilized the library Flair (\url{https://github.com/flairNLP/flair})
 
 
 \subsection{Stylometric}
-Next, we looked at the content of the posts and computed various stylometric features. These features are based on the writing style of the user. The list and description of these features can be found in Table~\ref{tab:stylometric}. We computed all of those features twice. Once for the headline of the post and once for the actual text. The notion behind this is, that we noticed, that the way in which the headline was used differed significantly between users. While some users choose to leave the field empty, some showed a clear tendency towards upper-case characters, and some wrote the headline as the start for the main text and concluded it with "...". 
+Next, we looked at the content of the posts and computed various stylometric features. These features are based on the writing style of the user. The list and description of these features can be found in Table~\ref{tab:stylometric}. We computed all of those features twice. Once for the headline of the post and once for the actual text. The notion behind this is, that we noticed that the way in which the headline was used differed significantly between users. While some users choose to leave the field empty, some showed a clear tendency towards upper-case characters, and some wrote the headline as the start for the main text and concluded it with "...". 
 
 \begin{table}[H]
-\begin{tabular}{ll}
+\begin{tabularx}{\textwidth}{lX}
 Feature Name & Description \\ \hline
 Alpha-chars-ratio & The fraction of total characters in the paragraph which are letters \\
 Digit-chars-ratio & The fraction of total characters in the paragraph which are digits \\
@@ -213,33 +215,33 @@ Average-word-length & Average length of words in characters \\
 Average-sentencechar-length & Average length of sentences in characters \\
 Average-sentenceword-length & Average length of sentences in words \\
 Total length & The length of the text \\
-\end{tabular}
+\end{tabularx}
 \caption{Used Stylometric Features}
 \label{tab:stylometric}
 \end{table}
 
 \subsection{Post Embeddings}
 As a final feature, we computed word embeddings for the post texts. The goal of this feature is to get information on the actual content the users write about as well as potentially additional information on their writing style. \\
-To compute the vectors, we utilized the Word2Vec model of the library Gensim (\url{https://radimrehurek.com/gensim/}). 
-We used embedding vectors of size 50 only computed the embedding for words which at least occurred ten times and trained the model over 500 iterations. 
+To compute the vectors, we utilized the Word2Vec model of the library Gensim\footnote{\url{https://radimrehurek.com/gensim/}}. 
+We used embedding vectors of size 50, only computed the embeddings for words which at least occurred ten times and trained the model over 500 iterations. 
 When embedding the posts, we only embedded at most 100 words for each post to restrict the size of the feature.  
 
 \section{Evaluation}
-In this section we describe our results. For the final training of the network we split into a test and training set (80\%/20\%). Additionally we used a validation data set for early stopping (20\%) of the training test. 
+In this section we describe our results. For the final training of the network, we split into a test and training set (80\%/20\%). Additionally we used a validation dataset for early stopping (20\%) of the training test. 
 
 \subsection{Baseline}
 %TODO find more baseline data
-As one base line we use random guessing. In our dataset we have 192 Users, hence a random guess yields an accuracy of $1/192 = 0.0052$. 
+The most apparent lower bound baseline is random guessing. In our dataset we have 192 Users, hence a random guess yields an accuracy of $1/192 = 0.0052$. 
 
 \subsection{Results}
-In this section we list the achieved results for various feature configuration.
-We first trained models for each individual feature the corresponding results are listed in Table~\ref{tab:result_features}. 
-Next we trained different configurations containing various combination of features, the results are depicted in Table~\ref{tab:result_configurations}.
+In this section, we list the achieved results for various feature configurations.
+We first trained models for each individual feature to find out how much it contributed to the classification accuracy. The corresponding results are listed in Table~\ref{tab:result_features}. 
+Next we trained different configurations containing various combinations of features. These results are depicted in Table~\ref{tab:result_configurations}.
 
 \subsubsection{Individual Features}
 To get an idea of the usefulness of individual features we trained the network for each individual feature. 
 
-For all features below we trained a simple network using an input layer, one or two hidden layers and one output layer. 
+For all features below, we trained a simple network using an input layer, one or two hidden layers and one output layer. 
 The results for each feature and the corresponding parameters are listed in Table~\ref{tab:result_features}.
 
 \begin{table}[H]
@@ -256,10 +258,10 @@ Stylometric & 0.21 & 0.21 & (150),(512) & - & 0.1 & 18
 \label{tab:result_features}
 \end{table}
 
+We found that the named entities in the article and the stylometric features of the post itself achieved the highest accuracies on their own.
 
 \subsubsection{Metadata Features}
-The notion behind this model was to use all available features that are not related to the content of the post. \\
-Therefore the following features are used:
+The notion behind this model was to use all available features that are not related to the content of the post. Therefore, the following features are used:
 \begin{itemize}
 \item Date Statistics
 \item Post Ratings
@@ -269,11 +271,11 @@ Therefore the following features are used:
 \end{itemize}
 
 \subsubsection{Dense Features}
-This model contains all features except for the embeddings. Since we added recurrent layers for the post embeddings this is the configuration with all features such that the model is still a feed forward network. 
+This model contains all features except for the post embeddings. Since we added recurrent layers for the post embeddings, this is the configuration with all features such that the model is still a feed-forward network. We call the configuration \textit{Dense Features} as its inputs are only sent through dense layers.
 
 
 \subsubsection{Post Content Features}
-Since this model utilized the Post Embeddings we added recurrent layers and a concatenation layer to merge them with the remaining features which are only used in a feed forward manner. 
+Since this model utilised the post embeddings, we added recurrent layers and a concatenation layer to merge them with the remaining features which are only used in a feed-forward manner. 
 The model is depicted in Figure~\ref{fig:post_content_model}.
 This model contains all features which are directly related to the content of the post.
 Therefore the following features are used:
@@ -284,8 +286,9 @@ Therefore the following features are used:
 
 
 \subsubsection{All Features}
-For this model we combined all available features. We used a recurrent network for the post embeddings and combined it with a feed forward network of the other features. The model is depicted in Figure~\ref{fig:complete_model}.
+For this model, we combined all available features. We used a recurrent network for the post embeddings and combined it with a feed-forward network of the other features. The model is depicted in Figure~\ref{fig:complete_model}.
 
+% TODO maybe reference table 3 in the text somehow and write that these were the best results we obtained when trying many different hyper-parameters?
 
 \begin{table}[H]
 \begin{tabular}{lllllll}
@@ -303,7 +306,7 @@ All Features & 0.45 & 0.44 & Fig.~\ref{fig:complete_model} & 0.3 & 0.2 & 11 \\
 \centering
 \begin{subfigure}{.5\textwidth}
 \centering
-  \includegraphics[width=.9\linewidth]{assets/AuthorAttributionModel_post_content_features.png}
+  \includegraphics[width=.9\linewidth]{assets/AuthorAttributionModel_post_content_features.png} % TODO maybe use model graphs without shapes so that they are bit smaller and easier to read?
   \caption{Model for Post Content Features}
   \label{fig:post_content_model}
  \end{subfigure}%
