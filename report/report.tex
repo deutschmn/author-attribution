@@ -234,9 +234,9 @@ In this section we describe our results. For the final training of the network, 
 The most apparent lower bound baseline is random guessing. In our dataset we have 192 Users, hence a random guess yields an accuracy of $1/192 = 0.0052$. 
 
 \subsection{Results}
-In this section, we list the achieved results for various feature configurations.
-We first trained models for each individual feature to find out how much it contributed to the classification accuracy. The corresponding results are listed in Table~\ref{tab:result_features}. 
-Next we trained different configurations containing various combinations of features. These results are depicted in Table~\ref{tab:result_configurations}.
+In this section, we list the achieved results for various feature configurations. For all our trained models, we tried different architectures in terms of the number of neurons and the number of layers. Furthermore, we tested different hyperparameters, such as learning rate and drop-out regularization. We used early stopping to determine the ideal amount of training epochs. If the validation accuracy did not improve for three consecutive epochs, we stopped the training and restored the weights to the ones that achieved the highest accuracy. \\
+We first trained models for each individual feature to find out how much it contributed to the classification accuracy. The chosen hyper parameters as well as the corresponding results are listed in Table~\ref{tab:result_features}. 
+Next we trained different configurations containing various combinations of features. These results with the chosen hyper parameters are depicted in Table~\ref{tab:result_configurations}.
 
 \subsubsection{Individual Features}
 To get an idea of the usefulness of individual features we trained the network for each individual feature. 
@@ -269,9 +269,11 @@ The notion behind this model was to use all available features that are not rela
 \item Article Categories
 \item Article Named Entities
 \end{itemize}
+Even without the actual content of the post, just using the user response and the entities of the corresponding article, this model was able to achieve a decent test accuracy of $0.27$. 
 
 \subsubsection{Dense Features}
-This model contains all features except for the post embeddings. Since we added recurrent layers for the post embeddings, this is the configuration with all features such that the model is still a feed-forward network. We call the configuration \textit{Dense Features} as its inputs are only sent through dense layers.
+This model contains all features except for the post embeddings. Since we added recurrent layers for the post embeddings, this is the configuration with all features such that the model is still a feed-forward network. We call the configuration \textit{Dense Features} as its inputs are only sent through dense layers. \\
+By adding the stylometric features when compared to the model before, this configuration was also able to incorporate information about the writing style of users, which allowed it to perform even better achieving a test accuracy of $0.35$.
 
 
 \subsubsection{Post Content Features}
@@ -283,12 +285,12 @@ Therefore the following features are used:
 \item Post Embeddings
 \item Stylometrics
 \end{itemize}
+This configuration only utilized the actual user posts, however with the addition of the post embeddings and a more complex architecture it was able to identify users significantly better than a model which just used stylometrics (see Table~\ref{tab:result_features}). It achieved a test accuracy of $0.31$.
 
 
 \subsubsection{All Features}
-For this model, we combined all available features. We used a recurrent network for the post embeddings and combined it with a feed-forward network of the other features. The model is depicted in Figure~\ref{fig:complete_model}.
+For this model, we combined all available features. We used a recurrent network for the post embeddings and combined it with a feed-forward network of the other features. The model is depicted in Figure~\ref{fig:complete_model}. This model was able to significantly outperform all other configurations and achieved a test accuracy of $0.44$.
 
-% TODO maybe reference table 3 in the text somehow and write that these were the best results we obtained when trying many different hyper-parameters?
 
 \begin{table}[H]
 \begin{tabular}{lllllll}
@@ -306,7 +308,7 @@ All Features & 0.45 & 0.44 & Fig.~\ref{fig:complete_model} & 0.3 & 0.2 & 11 \\
 \centering
 \begin{subfigure}{.5\textwidth}
 \centering
-  \includegraphics[width=.9\linewidth]{assets/AuthorAttributionModel_post_content_features.png} % TODO maybe use model graphs without shapes so that they are bit smaller and easier to read?
+  \includegraphics[width=.9\linewidth]{assets/AuthorAttributionModel_post_content_features.png} 
   \caption{Model for Post Content Features}
   \label{fig:post_content_model}
  \end{subfigure}%
