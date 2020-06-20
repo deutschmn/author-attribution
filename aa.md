@@ -51,6 +51,35 @@ a.k.a. *authorship attribution* or *author identification*.
 ### Interpretation
 
 ## Discussion
-- *The discussion section should provide the key insights and the context (i.e., not only list what worked (or not), but also provide possible reasons why it worked (or not), or when it should work)*
+
+>  *The discussion section should provide the key insights and the context (i.e., not only list what worked (or not), but also provide possible reasons why it worked (or not), or when it should work)*
+
+- feature selection
+  - date stats (a bit surprisingly) not very helpful
+  - content very helpful (embeddings, article entities)
+  - style also quite helpful
+    - even though we only used rather simple features
+    - → more advanced are future work
+
+- data preparation
+  - one-hot-encoding of categories essential
+  - normalisation of features very important (timestamp for post date was very hard to train)
+  - embeddings for post content work well
+    - any issues?
+- Network architecture
+
+  - RNN for post embeddings
+    - best type: GRU; LSTM harder to train
+  - dense layer after concatenation is important
+    - but more than one don't really make a difference
+- Network hyper params
+
+  - early stopping very useful
+  - dropout absolutely essential (overfitting otherwise)
+  - extensive search necessary
 
 ## Conclusion
+
+* good results for given task
+* hard to find a good baseline to compare to
+* semantics that are considered in the post contribute greatly to results (style and text itself wouldn't yield such high rates)
