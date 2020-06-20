@@ -56,25 +56,36 @@ a.k.a. *authorship attribution* or *author identification*.
 
 - feature selection
   - date stats (a bit surprisingly) not very helpful
+    - Still ~7 times better than random guessing. 
+    - Most users prob. don't have a clear routine when writing posts and are just slightly more likely to post on specific times of the day / day of the week. Due to that and partially also due to the large number of users we are trying to distinguish this is most likely not enough information. 
   - content very helpful (embeddings, article entities)
+    - Both features however do require a high amount of pre-processing when compared to other features. 
+  - Article Entities help capture interests of Users e.g. interest in politician mentioned in article -> likely to create post. Interests seem to be a good indicator for identifying users this can also be seen by the Article Categories which even though a quite simple feature with a very limited number of values was able to deliver a performance ~17 times better than random guessing
+      - Entities allowed us to restrict this feature to the article content that is actually important for this task. While it would also be possible to compute embeddings for articles this would require even more pre processing and would result in much larger feature vectors.
+    - Embeddings are (prob.) able to capture both the things users write about as well as their writing style
   - style also quite helpful
     - even though we only used rather simple features
     - → more advanced are future work
-
+  
 - data preparation
   - one-hot-encoding of categories essential
   - normalisation of features very important (timestamp for post date was very hard to train)
   - embeddings for post content work well
     - any issues?
+      - Stemming is important to detect entities like "Amazons..." and "Amazon" are the same
+      - Important to restrict Entities to most common ones, otherwise the feature vectors would grow to large
+      - Flair offered a trained model which is both easy to use and has great accuracy 
 - Network architecture
 
   - RNN for post embeddings
     - best type: GRU; LSTM harder to train
   - dense layer after concatenation is important
     - but more than one don't really make a difference
+  - RNNs take significantly longer to train, network might still have plenty of performance headroom  but with our limited hardware an extensive hyperparameter search is very time expensive -> Future Work
+  - Dropout worked well for RNN, but in the standard feed forward network a good strategy seems to be to keep the network simple by restricting the number of layers and neurons per layer as a less complex model also is less likely to overfit. 
 - Network hyper params
 
-  - early stopping very useful
+  - early stopping very useful (also prevents overfitting)
   - dropout absolutely essential (overfitting otherwise)
   - extensive search necessary
 
