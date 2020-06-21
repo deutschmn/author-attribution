@@ -132,7 +132,7 @@ For this feature we analysed at which time of the day and on which day of the we
 The notion behind this was that individual users will tend to post at similar times.
 A histogram of this data is depicted in Figure~\ref{fig:date_stats}.
 
-\begin{figure}[H]
+\begin{figure}
 \centering
 \begin{subfigure}{.5\textwidth}
 \centering
@@ -149,7 +149,7 @@ A histogram of this data is depicted in Figure~\ref{fig:date_stats}.
 \subsubsection{Post Ratings and Parent Posts}
 For further information about a post without the actual content we looked at the post ratings and whether the post was a comment to another user's post. The aim with this feature was to identify users that post more controversial content as well as users that only ever post comments (have a parent post) and users that never answer to other users (no parent post). Again we depict a histogram over this data (Figure~\ref{fig:post_stats}). This figure clearly shows that most posts get no votes at all, while there are a few posts which get a very large number of votes. 
 
-\begin{figure}[H]
+\begin{figure}
 \centering
 \begin{subfigure}{.5\textwidth}
 \centering
@@ -324,9 +324,34 @@ All Features & 0.45 & 0.44 & Fig.~\ref{fig:complete_model} & 0.3 & 0.2 & 11 \\
 
 
 \section{Discussion}
-%TODO
+
+In this section, we discuss the successes and challenges of our results and possible explanations.
+
+\subsection{Feature selection}
+
+In terms of feature selection, the statistics on post dates were less helpful than we had expected. We conclude that users either don't have a clear enough posting routine to make accurate predictions or that there wasn't enough information for the number of users between we were distinguishing. However, they performed still around seven times better than random guessing. 
+
+The contents of the posts (i.e. the word embeddings of the posts and the named entities in the corresponding articles) haven proven to yield very good results. In comparison, however, they also required the highest pre-processing efforts. The article entities in particular have shown to be well suited for capturing users' interests. That this is very helpful for predicting comment authorship was also shown by the article categories, which, despite being rather simple features, delivered a performance around 17 times better than random guessing. It was also quite helpful that the named entities in the articles captured quite well what the articles were about, as embedding the whole articles would have significantly enlarged the input vectors and hence made the network harder to train.
+
+Stylometric features also worked quite well for our prediction, even though we only used very simple ones. Most likely, better results could be obtained for more advanced features, such as vocabulary richness measures. We leave these to future work.
+
+\subsection{Data preparation}
+
+This task very heavily relied on data preparation for successful predictions. For the article categories, it was essential to one-hot-encode them before feeding them into the network. Also, we performed some normalisation on the date statistics as, for example, just putting in the raw timestamp of the posts created severe perturbations in the training.
+
+As already alluded to above, the post embeddings required significant pre-processing. We found prior stemming useful to detect entities, as, for example, "Amazons" refers to the same entity as "Amazon", but is used in a different case. To prevent feature vectors from growing too large, we found it important to only consider to the most common entities. 
+
+\subsection{Network architecture and hyper parameters}
+Our final results used a multi-input neural network with two input branches, one feed-forward and one recurrent for the post embeddings. We found it important to include another dense layer after the concatenation of both branches to allow the network to learn the balance between the features.
+
+The recurrent network took significantly longer to train and our available hardware resources put limits to the extent of our hyper-parameter search. While we already explored many options, future work might explore different choices and hence yield better results. We found GRU units to outperform LSTM, which proved to be harder to train. 
+
+While dropout worked well as a means of regularisation in the recurrent branch of the network, for the feed-forward part, we found it more useful to keep the network simple by restricting the number of layers and neurons in order to keep the model from overfitting. We further mitigated issues of overfitting by using early stopping.
 
 \section{Conclusion}
+
+Overall, we conclude that we obtained rather good results for the given task. However, as this project is an application, it was hard to find a perfectly apt baseline to compare to. An important part of the good results is attributed to incorporating the semantics of the posts and articles into the prediction task. We found a wide variety of different features combined to yield the best results for our setting. 
+
 %TODO
 
 % TODO write about future work:
