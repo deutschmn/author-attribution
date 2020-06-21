@@ -1,3 +1,4 @@
+import pathlib
 import re
 import pandas
 import matplotlib.pyplot as plt
@@ -30,5 +31,6 @@ def save_and_show_plot(title: str, print_title=True):
     if print_title:
         plt.title(title)
     plt.tight_layout()
+    pathlib.Path("plots").mkdir(parents=True, exist_ok=True)
     plt.savefig("plots/" + title_to_filename(title))
     plt.show()

@@ -97,7 +97,8 @@
 %% information and builds the first part of the formatted document.
 \maketitle
 
-\section{Problem Setting}
+
+\section{Author Attribution Problem Setting}
 
 The aim of this project is to identify the authors of posts to a newspaper forum. This should be achieved through the incorporation of multiple factors, such as writing style and content, but also meta information such as the post date and the article to which the post was written. In that, the setting differentiates itself from the classical authorship attribution setting, where no meta information is used. 
 
@@ -357,6 +358,85 @@ Overall, we conclude that we obtained rather good results for the given task. Ho
 % TODO write about future work:
 % - try architectures other than Neural Network (MLP)
 % - comparison with other methods
+
+\section{Appendix}
+
+
+\subsection{User Response Prediction}
+
+\subsubsection{Problem Setting}
+This problem aims to predict the response to user posts based on the article content. Effectively we want to predict the number of positive and negative votes that user posts under an article will receive. 
+
+\subsubsection{Setup}
+We implemented our network using Keras. We decided to use a simple feed-forward network. We experimented with different architectures both in terms of the number of layers as well as the number of neurons per layer. To prevent overfitting, we used early stopping where we stopped the training if the loss function value on the validation set did not decrease for two consecutive epochs. 
+
+\subsubsection{Features}
+As features, we used the Named Entities of the articles. We only selected entities which occurred at least five times and also restricted the articles to ones containing at least five entities. 
+
+\subsubsection{Targets}
+The distribution of our targets is depicted in Figure~\ref{fig:user_resp_targets}. The votes are distributed extremely uneven and are best captured on a logarithmic scale. This also leads to our decision to use the mean squared logarithmic error (logarithmic MSE) as a loss function. Otherwise, our network would completely neglect articles which receive fewer votes. Additionally, we monitored the mean absolute error (MAE) to get an easier understandable however also less fair error metric.  
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}{.5\textwidth}
+\centering
+  \includegraphics[width=.9\linewidth]{assets/Vote_Distribution_over_Articles.png} 
+  \caption{Vote distribution over articles}
+  \label{fig:vote_distribution_articles}
+ \end{subfigure}%
+\begin{subfigure}{.5\textwidth}
+\centering
+  \includegraphics[width=.9\linewidth]{assets/Logarithmic_Vote_Distribution_over_Articles.png}
+  \caption{Logarithmic vote distribution over articles}
+    \label{fig:log_vote_distribution_articles}
+ \end{subfigure}
+ \caption{Targets for user response prediction}
+\label{fig:user_resp_targets}
+\end{figure}
+
+\subsubsection{Evaluation}
+We split our data into a training and test set (80\%/20\%) and used a part of the training data (20\%) as a validation set. After some experiments, we decided on a simple architecture consisting of one input layer, one output layer and two hidden layers, both with four neurons. We used a small batch size of 10 and the Adam optimizer. Since the network performed very fast during training, we found that we can use a relatively very small learning rate of $1 \times 10^{-5}$, which gave use slightly better results than larger ones. \\
+The training results are depicted in Figure~\ref{fig:training_results}. In the beginning, we see a steady decline both in the loss values and also in the validation loss. However, with an increasing amount of iterations, the validation loss no longer decreases, and the network starts to overfit, at which point the early stopping stops the training. 
+The final result on the test set is a logarithmic MSE of $1.9$ and an MAE of $13.8$.
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}{.5\textwidth}
+\centering
+  \includegraphics[width=.9\linewidth]{assets/User_Response_Prediction_Training_Absolute_Error.png} 
+  \caption{Absolute absolute error over training iterations}
+ \end{subfigure}%
+\begin{subfigure}{.5\textwidth}
+\centering
+  \includegraphics[width=.9\linewidth]{assets/User_Response_Prediction_Training_Loss_mean_squared_logarithmic_error_.png}
+  \caption{Logarithmic MSE over training iterations}
+ \end{subfigure}
+ \caption{Training results}
+\label{fig:training_results}
+\end{figure}
+
+\subsection{Named Entity Analysis}
+Additionally, to using Named Entities as features for our networks, we also performed some other experiments. For example, we analysed the occurrences of entities in articles over time (Figure~\ref{fig:per_entities_over_time}). \\ Furthermore, we calculated a co-occurrence matrix for the occurrences of entities in articles. From this matrix, we constructed a graph using the tool Gephi~\footnote{\url{https://gephi.org}}, which allowed us to analyse connections between entities. A part of this graph with entities connected to Österreich is depicted in Figure~\ref{fig:graph_cooccurrences_oesterreich}.
+
+\begin{figure}[H]
+\centering
+\begin{subfigure}{.5\textwidth}
+\centering
+  \includegraphics[width=.9\linewidth]{assets/Top_Entities_from_PER_over_time.png} 
+  \caption{Frequency of top entities with label person over time}
+  \label{fig:per_entities_over_time}
+ \end{subfigure}%
+\begin{subfigure}{.5\textwidth}
+\centering
+  \includegraphics[width=.9\linewidth]{assets/co_occurrences_österreich.png}
+  \caption{Entities connected to Österreich in Gephi}
+  \label{fig:graph_cooccurrences_oesterreich}
+ \end{subfigure}
+ \caption{Named Entity analysis}
+\label{fig:ne_analysis}
+\end{figure}
+
+
 
 \pagebreak
 
