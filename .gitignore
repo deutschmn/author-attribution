@@ -9,8 +9,9 @@ plots/
 # Log files
 checkpoints/
 .ipynb_checkpoints
-hyperparams/
-tensorboard_logs/
+hyperparams/**/*.png
+tensorboard_logs/**/*.png
+plugins/
 
 ### LaTeX ###
 ## Core latex/pdflatex auxiliary files:

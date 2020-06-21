@@ -1,0 +1,1 @@
+{"rnn_inputs": [], "dense_inputs": ["parent_posts"], "input_dimensions": {"num_users": 192, "num_dense_inputs": 1, "num_rnn_inputs": 0, "num_rnn_inputs_dimension": 0, "num_train_samples": 38820}}

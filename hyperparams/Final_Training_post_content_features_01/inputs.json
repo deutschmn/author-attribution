@@ -1,0 +1,1 @@
+{"rnn_inputs": ["embedded_posts"], "dense_inputs": ["stylometric_features"], "input_dimensions": {"num_users": 192, "num_dense_inputs": 18, "num_rnn_inputs": 100, "num_rnn_inputs_dimension": 50, "num_train_samples": 38820}}
