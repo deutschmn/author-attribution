@@ -58,7 +58,6 @@ def compute_article_category_stats(posts):
 def load_raw_posts():
     columns = ["ID_Post", "ID_User", "CreatedAt", "Status", "Headline", "p.Body", "ID_Article", "Path"]
     sql = "SELECT " + ", ".join(columns) + " FROM Posts p INNER JOIN Articles a USING (ID_Article)"
-    # TODO filter deleted posts?
 
     # only treat posts from users with at least this many post
     min_user_posts = 500
@@ -125,7 +124,7 @@ def embed_posts(posts, post_embeddings, max_words):
             if word in post_embeddings:
                 row["embeddings"].append(post_embeddings[word])
             else:
-                # TODO is it okay to just skip words for which we don't have an embedding?
+                # skip words for which we don't have an embedding
                 pass
 
     return tf.keras.preprocessing.sequence.pad_sequences(df["embeddings"], padding='post', maxlen=max_words)
@@ -236,8 +235,5 @@ def prepare_data():
         "parent_posts": load_parent_posts(posts),
         "targets": tf.keras.utils.to_categorical(posts["ID_User"].cat.codes)
     }
-
-    # TODO: need to make sure all ID_Posts align, (-> maybe ensure in preparation already?)
-    #  could also join frames together based on ID_Post to ensure this (-> bit of a pain with 3D post embeddings)
 
     return posts, data

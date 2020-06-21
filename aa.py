@@ -96,6 +96,7 @@ def hyper_parameter_search(rnn_inputs, dense_inputs, targets: np.array,
         monitor='val_accuracy', patience=3)
 
     tensorboard_log_dir = "tensorboard_logs/" + search_title
+    pathlib.Path(tensorboard_log_dir).mkdir(parents=True, exist_ok=True)
     hist_callback = tf.keras.callbacks.TensorBoard(
         log_dir=tensorboard_log_dir,
         histogram_freq=1,
@@ -196,7 +197,7 @@ def final_training(model, rnn_inputs, dense_inputs, targets: np.array,
                    parameters: {}, validation_split=0.2, max_epochs=15,
                    search_title: str = None, model_name: str = "AuthorAttributionModel"):
     """
-    Trains the model on the test set and runs validation on the test set
+    Trains the model on the training set and runs validation on the test set
     :param model: the model to train
     :param rnn_inputs: dictionary with inputs to RNN (shapes Nx?, N = #posts)
     :param dense_inputs: dictionary with inputs to dense branch (shapes Nx?, N = #posts)
@@ -246,7 +247,7 @@ def final_training(model, rnn_inputs, dense_inputs, targets: np.array,
         epochs=max_epochs,
         validation_split=validation_split,
         callbacks=[early_stop, hist_callback],
-        batch_size=32  # TODO maybe add as argument
+        batch_size=32
     )
     result = model.evaluate(x_test, y_test)
     final_test_result = dict(zip(model.metrics_names, result))

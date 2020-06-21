@@ -16,20 +16,6 @@ def get_pandas_from_table(table_name):
     return pandas_frame
 
 
-def get_table_names():
-    con = sqlite3.connect(DBASE)
-    curs = con.cursor()
-    curs.execute("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name;")
-    tables = curs.fetchall()
-    tables = [r[0] for r in tables]
-    con.close()
-    return tables
-
-
-def convert_date(dstring):
-    return pandas.datetime.strptime(dstring, '%Y-%m-%d %H:%M:%S.%f')
-
-
 def generate_pkl_cached(pkl_cache_fname: str, function: Callable[[any], pandas.DataFrame], *args, **kwargs):
     if pkl_cache_fname is not None:
         try:

@@ -1,11 +1,8 @@
-import sqlite3
-import matplotlib.pyplot as plt
+import numpy as np
 import pandas
-import sqlalchemy
+
 import dbase_helper
 import plt_helper
-import numpy as np
-import datetime
 
 
 def generate_joined_category_articles_frame():
