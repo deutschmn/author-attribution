@@ -383,7 +383,7 @@ We implemented our network using Keras. We decided to use a simple feed-forward 
 As features, we used the named entities of the articles. We only selected entities which occurred at least five times and also restricted the articles to those containing at least five entities. 
 
 \subsubsection{Targets}
-The distribution of our targets is depicted in Figure~\ref{fig:user_resp_targets}. The votes are distributed extremely uneven and are best captured by a logarithmic scale. This also leads to our decision to use the mean squared logarithmic error (logarithmic MSE) as a loss function. Otherwise, our network would completely neglect articles which receive fewer votes. Additionally, we monitored the mean absolute error (MAE) to get an error metric that is easier to understand, however, also slightly unfairer.  
+The distribution of our targets is depicted in Figure~\ref{fig:user_resp_targets}. The votes are distributed extremely uneven and are best captured by a logarithmic scale. This also leads to our decision to use the mean squared logarithmic error (logarithmic MSE) as a loss function. Otherwise, our network would completely neglect articles which receive fewer votes. Additionally, we monitored the mean absolute error (MAE) to get an error metric that is easier to understand, however, as already noted fails to capture the significance of the error.  
 
 \begin{figure}[H]
 \centering
