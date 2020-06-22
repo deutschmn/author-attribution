@@ -353,28 +353,25 @@ While dropout worked well as a means of regularisation in the recurrent branch o
 
 Overall, we conclude that we obtained rather good results for the given task. However, as this project is an application, it was hard to find a perfectly apt baseline to compare to. An important part of the good results is attributed to incorporating the semantics of the posts and articles into the prediction task. We found a wide variety of different features combined to yield the best results for our setting. 
 
-%TODO
-
-% TODO write about future work:
-% - try architectures other than Neural Network (MLP)
-% - comparison with other methods
+\pagebreak
 
 \section{Appendix}
 
+Additionally to our main project, we also explored some other experiments on the dataset.
 
 \subsection{User Response Prediction}
 
 \subsubsection{Problem Setting}
-This problem aims to predict the response to user posts based on the article content. Effectively we want to predict the number of positive and negative votes that user posts under an article will receive. 
+This problem aims to predict the response to user posts based on the article content. Effectively, we want to predict the number of positive and negative votes that user posts under a certain article will receive. 
 
 \subsubsection{Setup}
-We implemented our network using Keras. We decided to use a simple feed-forward network. We experimented with different architectures both in terms of the number of layers as well as the number of neurons per layer. To prevent overfitting, we used early stopping where we stopped the training if the loss function value on the validation set did not decrease for two consecutive epochs. 
+We implemented our network using Keras. We decided to use a simple feed-forward network. We experimented with different architectures both in terms of the number of layers as well as the number of neurons per layer. To prevent overfitting, we used early stopping where we stopped the training, if the loss function value on the validation set did not decrease for two consecutive epochs. 
 
 \subsubsection{Features}
-As features, we used the Named Entities of the articles. We only selected entities which occurred at least five times and also restricted the articles to ones containing at least five entities. 
+As features, we used the named entities of the articles. We only selected entities which occurred at least five times and also restricted the articles to those containing at least five entities. 
 
 \subsubsection{Targets}
-The distribution of our targets is depicted in Figure~\ref{fig:user_resp_targets}. The votes are distributed extremely uneven and are best captured on a logarithmic scale. This also leads to our decision to use the mean squared logarithmic error (logarithmic MSE) as a loss function. Otherwise, our network would completely neglect articles which receive fewer votes. Additionally, we monitored the mean absolute error (MAE) to get an easier understandable however also less fair error metric.  
+The distribution of our targets is depicted in Figure~\ref{fig:user_resp_targets}. The votes are distributed extremely uneven and are best captured by a logarithmic scale. This also leads to our decision to use the mean squared logarithmic error (logarithmic MSE) as a loss function. Otherwise, our network would completely neglect articles which receive fewer votes. Additionally, we monitored the mean absolute error (MAE) to get an error metric that is easier to understand, however, also slightly unfairer.  
 
 \begin{figure}[H]
 \centering
@@ -395,8 +392,8 @@ The distribution of our targets is depicted in Figure~\ref{fig:user_resp_targets
 \end{figure}
 
 \subsubsection{Evaluation}
-We split our data into a training and test set (80\%/20\%) and used a part of the training data (20\%) as a validation set. After some experiments, we decided on a simple architecture consisting of one input layer, one output layer and two hidden layers, both with four neurons. We used a small batch size of 10 and the Adam optimizer. Since the network performed very fast during training, we found that we can use a relatively very small learning rate of $1 \times 10^{-5}$, which gave use slightly better results than larger ones. \\
-The training results are depicted in Figure~\ref{fig:training_results}. In the beginning, we see a steady decline both in the loss values and also in the validation loss. However, with an increasing amount of iterations, the validation loss no longer decreases, and the network starts to overfit, at which point the early stopping stops the training. 
+We split our data into a training and test set (80\%/20\%) and used a part of the training data (20\%) as a validation set. After some experiments, we decided on a simple architecture consisting of one input layer, one output layer and two hidden layers, both with four neurons. We used a small batch size of 10 and the Adam optimiser. Since the network performed very fast during training, we found that we can use a relatively small learning rate of $1 \times 10^{-5}$, which gave use slightly better results than larger ones. \\
+The training results are depicted in Figure~\ref{fig:training_results}. In the beginning, we see a steady decline both in the loss values and also in the validation loss. However, with an increasing number of iterations, the validation loss no longer decreases, and the network starts to overfit, at which point the early stopping stops the training. 
 The final result on the test set is a logarithmic MSE of $1.9$ and an MAE of $13.8$.
 
 \begin{figure}[H]
@@ -416,7 +413,7 @@ The final result on the test set is a logarithmic MSE of $1.9$ and an MAE of $13
 \end{figure}
 
 \subsection{Named Entity Analysis}
-Additionally, to using Named Entities as features for our networks, we also performed some other experiments. For example, we analysed the occurrences of entities in articles over time (Figure~\ref{fig:per_entities_over_time}). \\ Furthermore, we calculated a co-occurrence matrix for the occurrences of entities in articles. From this matrix, we constructed a graph using the tool Gephi~\footnote{\url{https://gephi.org}}, which allowed us to analyse connections between entities. A part of this graph with entities connected to Österreich is depicted in Figure~\ref{fig:graph_cooccurrences_oesterreich}.
+Additionally to using named entities as features for our main task, we also performed some other experiments. For example, we analysed the occurrences of entities in articles over time (Figure~\ref{fig:per_entities_over_time}). \\ Furthermore, we calculated a co-occurrence matrix for the occurrences of entities in articles. From this matrix, we constructed a graph using the tool Gephi~\footnote{\url{https://gephi.org}}, which allowed us to analyse connections between entities. A part of this graph with entities connected to \textit{\"Osterreich} is depicted in Figure~\ref{fig:graph_cooccurrences_oesterreich}.
 
 \begin{figure}[H]
 \centering
@@ -428,11 +425,11 @@ Additionally, to using Named Entities as features for our networks, we also perf
  \end{subfigure}%
 \begin{subfigure}{.5\textwidth}
 \centering
-  \includegraphics[width=.9\linewidth]{assets/co_occurrences_österreich.png}
-  \caption{Entities connected to Österreich in Gephi}
+  \includegraphics[width=.9\linewidth]{assets/co_occurrences_oesterreich.png}
+  \caption{Entities connected to \textit{\"Osterreich} in Gephi}
   \label{fig:graph_cooccurrences_oesterreich}
  \end{subfigure}
- \caption{Named Entity analysis}
+ \caption{Named entity analysis}
 \label{fig:ne_analysis}
 \end{figure}
 
