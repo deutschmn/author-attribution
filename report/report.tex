@@ -122,6 +122,18 @@ We implemented the neural network in Keras\footnote{\url{https://keras.io}} and 
 
 For training, we used Adam \cite{adam} as the optimiser and categorical cross-entropy loss, as we posed our problem as a multi-class classification. The network structures and features are explained in detail in the following section. 
 
+In order to improve the effectiveness of our hyper-parameter-tuning, we used Keras Tuner\footnote{\url{https://keras-team.github.io/keras-tuner/}} with Hyperband \cite{hyperband} and visualised our results using HiPlot\footnote{\url{https://github.com/facebookresearch/hiplot}} and TensorBoard\footnote{\url{https://www.tensorflow.org/tensorboard}} to be able to better analyse them. An example of a hyper-parameter analysis is depicted in Figure~\ref{fig:hiplot}.
+
+\begin{figure}
+\centering
+\begin{subfigure}{.9\textwidth}
+\centering
+  \includegraphics[width=.9\linewidth]{assets/hiplot.png}
+ \end{subfigure}%
+\caption{Analysis of hyper-parameter search using HiPlot. Different trials are depicted as lines and colouring was applied to highlight the results for different dimensions of the RNN.}
+\label{fig:hiplot}
+\end{figure}
+
 \section{Features}
 To best utilise our dataset, we made use of various different features which are described in this section. 
 
